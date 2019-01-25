@@ -16,7 +16,7 @@
   },
   "autoload": {
     "psr-4": {
-      "rabbit\\db\\mysql": "src/"
+      "rabbit\\db\\mysql\\": "src/"
     }
   }
 }
