@@ -1,0 +1,22 @@
+{
+  "name": "rabbit/db-mysql",
+  "description": "rabbit db-mysql base on yiisoft/db-mysql.",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "albert",
+      "email": "63851587@qq.com"
+    }
+  ],
+  "require": {
+    "rabbit/framework": "dev-master",
+    "rabbit/pool": "dev-master",
+    "rabbit/db": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "rabbit\\db\\mysql": "src/"
+    }
+  }
+}
