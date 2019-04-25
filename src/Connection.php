@@ -149,16 +149,14 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     }
 
     /**
-     * 批量删除
      * @param ActiveRecord $table
-     * @param $array_columns
-     * @param null $transaction
-     * @return array|bool|int
-     * @throws HttpException
+     * @param array $array_columns
+     * @param Transaction|null $transaction
+     * @return bool|int
      * @throws \rabbit\db\Exception
      * @throws \rabbit\exception\InvalidConfigException
      */
-    public function deleteSeveral(ActiveRecord $table, array $array_columns, Transaction $transaction = null)
+    public function deleteSeveral(ActiveRecord $table, array $array_columns, Transaction $transaction = null): int
     {
         $result = false;
         $keys = $table::primaryKey();
@@ -193,10 +191,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         if ($condition) {
             $result = $table->deleteAll($condition);
         }
-        if ($result !== false) {
-            return $condition;
-        } else {
-            return $result;
-        }
+        return $result;
     }
 }
