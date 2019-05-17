@@ -11,6 +11,7 @@ namespace rabbit\db\mysql;
 
 use rabbit\activerecord\ActiveRecord;
 use rabbit\db\ConnectionTrait;
+use rabbit\db\DbContext;
 use rabbit\db\Expression;
 use rabbit\db\Transaction;
 use rabbit\exception\NotSupportedException;
@@ -65,7 +66,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     /**
      * @param bool $release
      */
-    public function release($release = false): void
+    public function release(string $name = 'db', $release = false): void
     {
         $transaction = $this->getTransaction();
         if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
@@ -73,6 +74,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         }
         if ($this->isAutoRelease() || $release) {
             $this->pool->release($this);
+            DbContext::delete($name);
         }
     }
 
@@ -139,8 +141,9 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
                 }
                 if ($value instanceof Expression) {
                     $placeholders[] = $value->expression;
-                    foreach ($value->params as $n => $v)
+                    foreach ($value->params as $n => $v) {
                         $params[$n] = $v;
+                    }
                 } else {
                     $placeholders[] = ':' . $name . $i;
                     $params[':' . $name . $i] = $value;
