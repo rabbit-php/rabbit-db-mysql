@@ -66,7 +66,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     /**
      * @param bool $release
      */
-    public function release(string $name = 'db', $release = false): void
+    public function release($release = false, string $name = 'db'): void
     {
         $transaction = $this->getTransaction();
         if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
