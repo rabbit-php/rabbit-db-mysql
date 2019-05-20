@@ -4,7 +4,6 @@ namespace rabbit\db\mysql;
 
 use rabbit\activerecord\ActiveRecord;
 use rabbit\db\Exception;
-use rabbit\db\Transaction;
 use rabbit\helper\ArrayHelper;
 
 /**
@@ -16,34 +15,27 @@ class CreateExt
     /**
      * @param ActiveRecord $model
      * @param array $body
-     * @param Transaction|null $transaction
+     * @param bool $hasRealation
      * @return array
-     * @throws \rabbit\db\Exception
+     * @throws Exception
      */
-    public static function create(ActiveRecord $model, array $body, bool $hasRealation = false, Transaction $transaction = null): array
-    {
-        $transaction = $transaction ? $transaction : $model->getDb()->beginTransaction();
-        try {
-            if (ArrayHelper::isIndexed($body)) {
-                if ($hasRealation) {
-                    $result = [];
-                    foreach ($body as $params) {
-                        $res = self::createSeveral(clone $model, $params, $transaction);
-                        $result[] = $res;
-                    }
-                } else {
-                    $result = $model::getDb()->insertSeveral($model, $body);
+    public static function create(
+        ActiveRecord $model,
+        array $body,
+        bool $hasRealation = false
+    ): array {
+        if (ArrayHelper::isIndexed($body)) {
+            if ($hasRealation) {
+                $result = [];
+                foreach ($body as $params) {
+                    $res = self::createSeveral(clone $model, $params);
+                    $result[] = $res;
                 }
             } else {
-                $result = self::createSeveral($model, $body, $transaction);
+                $result = $model::getDb()->saveSeveral($model, $body);
             }
-
-            if ($transaction->getIsActive()) {
-                $transaction->commit();
-            }
-        } catch (Exception $ex) {
-            $transaction->rollBack();
-            throw $ex;
+        } else {
+            $result = self::createSeveral($model, $body);
         }
 
         return is_array($result) ? $result : [$result];
@@ -52,16 +44,14 @@ class CreateExt
     /**
      * @param ActiveRecord $model
      * @param array $body
-     * @param Transaction $transaction
      * @return array
      * @throws Exception
      */
-    private static function createSeveral(ActiveRecord $model, array $body, Transaction $transaction): array
+    private static function createSeveral(ActiveRecord $model, array $body): array
     {
         if ($model->save()) {
-            $result = self::saveRealation($model, $body, $transaction);
+            $result = self::saveRealation($model, $body);
         } elseif (!$model->hasErrors()) {
-            $transaction->rollBack();
             throw new Exception('Failed to create the object for unknown reason.');
         }
         return $result;
@@ -70,11 +60,10 @@ class CreateExt
     /**
      * @param ActiveRecord $model
      * @param array $body
-     * @param Transaction $transaction
      * @return array
      * @throws Exception
      */
-    private static function saveRealation(ActiveRecord $model, array $body, Transaction $transaction): array
+    private static function saveRealation(ActiveRecord $model, array $body): array
     {
         $result = [];
         //关联模型
@@ -93,7 +82,7 @@ class CreateExt
                                 }
                             }
                             $child_model = new $child();
-                            $res = self::createSeveral($child_model, $params, $transaction);
+                            $res = self::createSeveral($child_model, $params);
                             $result[$key][] = $res;
                         }
                     }
