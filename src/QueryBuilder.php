@@ -8,10 +8,10 @@
 namespace rabbit\db\mysql;
 
 use InvalidArgumentException;
-use rabbit\exception\NotSupportedException;
 use rabbit\db\Exception;
 use rabbit\db\Expression;
 use rabbit\db\Query;
+use rabbit\exception\NotSupportedException;
 
 /**
  * QueryBuilder is the query builder for MySQL databases.
@@ -48,17 +48,6 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
         Schema::TYPE_MONEY => 'decimal(19,4)',
         Schema::TYPE_JSON => 'json'
     ];
-
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function defaultExpressionBuilders()
-    {
-        return array_merge(parent::defaultExpressionBuilders(), [
-            \rabbit\db\JsonExpression::class => JsonExpressionBuilder::class,
-        ]);
-    }
 
     /**
      * Builds a SQL statement for renaming a column.
@@ -243,25 +232,6 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
 
     /**
      * {@inheritdoc}
-     */
-    protected function prepareInsertValues($table, $columns, $params = [])
-    {
-        [$names, $placeholders, $values, $params] = parent::prepareInsertValues($table, $columns, $params);
-        if (!$columns instanceof Query && empty($names)) {
-            $tableSchema = $this->db->getSchema()->getTableSchema($table);
-            if ($tableSchema !== null) {
-                $columns = !empty($tableSchema->primaryKey) ? $tableSchema->primaryKey : [reset($tableSchema->columns)->name];
-                foreach ($columns as $name) {
-                    $names[] = $this->db->quoteColumnName($name);
-                    $placeholders[] = 'DEFAULT';
-                }
-            }
-        }
-        return [$names, $placeholders, $values, $params];
-    }
-
-    /**
-     * {@inheritdoc}
      * @see https://downloads.mysql.com/docs/refman-5.1-en.pdf
      */
     public function upsert($table, $insertColumns, $updateColumns, &$params)
@@ -289,6 +259,15 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * {@inheritdoc}
      * @since 2.0.8
      */
+    public function dropCommentFromColumn($table, $column)
+    {
+        return $this->addCommentOnColumn($table, $column, '');
+    }
+
+    /**
+     * {@inheritdoc}
+     * @since 2.0.8
+     */
     public function addCommentOnColumn($table, $column, $comment)
     {
         // Strip existing comment which may include escaped quotes
@@ -301,34 +280,6 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
             . (empty($definition) ? '' : ' ' . $definition)
             . ' COMMENT ' . $this->db->quoteValue($comment);
     }
-
-    /**
-     * {@inheritdoc}
-     * @since 2.0.8
-     */
-    public function addCommentOnTable($table, $comment)
-    {
-        return 'ALTER TABLE ' . $this->db->quoteTableName($table) . ' COMMENT ' . $this->db->quoteValue($comment);
-    }
-
-    /**
-     * {@inheritdoc}
-     * @since 2.0.8
-     */
-    public function dropCommentFromColumn($table, $column)
-    {
-        return $this->addCommentOnColumn($table, $column, '');
-    }
-
-    /**
-     * {@inheritdoc}
-     * @since 2.0.8
-     */
-    public function dropCommentFromTable($table)
-    {
-        return $this->addCommentOnTable($table, '');
-    }
-
 
     /**
      * Gets column definition.
@@ -360,5 +311,52 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
         }
 
         return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @since 2.0.8
+     */
+    public function dropCommentFromTable($table)
+    {
+        return $this->addCommentOnTable($table, '');
+    }
+
+    /**
+     * {@inheritdoc}
+     * @since 2.0.8
+     */
+    public function addCommentOnTable($table, $comment)
+    {
+        return 'ALTER TABLE ' . $this->db->quoteTableName($table) . ' COMMENT ' . $this->db->quoteValue($comment);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function defaultExpressionBuilders()
+    {
+        return array_merge(parent::defaultExpressionBuilders(), [
+            \rabbit\db\JsonExpression::class => JsonExpressionBuilder::class,
+        ]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function prepareInsertValues($table, $columns, $params = [])
+    {
+        [$names, $placeholders, $values, $params] = parent::prepareInsertValues($table, $columns, $params);
+        if (!$columns instanceof Query && empty($names)) {
+            $tableSchema = $this->db->getSchema()->getTableSchema($table);
+            if ($tableSchema !== null) {
+                $columns = !empty($tableSchema->primaryKey) ? $tableSchema->primaryKey : [reset($tableSchema->columns)->name];
+                foreach ($columns as $name) {
+                    $names[] = $this->db->quoteColumnName($name);
+                    $placeholders[] = 'DEFAULT';
+                }
+            }
+        }
+        return [$names, $placeholders, $values, $params];
     }
 }

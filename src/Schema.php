@@ -7,7 +7,6 @@
 
 namespace rabbit\db\mysql;
 
-use rabbit\exception\InvalidConfigException;
 use rabbit\core\ObjectFactory;
 use rabbit\db\Constraint;
 use rabbit\db\ConstraintFinderInterface;
@@ -17,6 +16,7 @@ use rabbit\db\Expression;
 use rabbit\db\ForeignKeyConstraint;
 use rabbit\db\IndexConstraint;
 use rabbit\db\TableSchema;
+use rabbit\exception\InvalidConfigException;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
 
@@ -34,11 +34,6 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
      * {@inheritdoc}
      */
     public $columnSchemaClass = 'rabbit\db\mysql\ColumnSchema';
-    /**
-     * @var bool whether MySQL used is older than 5.1.
-     */
-    private $_oldMysql;
-
     /**
      * @var array mapping from physical column types (keys) to abstract column types (values)
      */
@@ -73,7 +68,6 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
         'varbinary' => self::TYPE_BINARY,
         'json' => self::TYPE_JSON,
     ];
-
     /**
      * {@inheritdoc}
      */
@@ -82,131 +76,10 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
      * {@inheritdoc}
      */
     protected $columnQuoteCharacter = '`';
-
     /**
-     * {@inheritdoc}
+     * @var bool whether MySQL used is older than 5.1.
      */
-    protected function resolveTableName($name)
-    {
-        $resolvedName = new TableSchema();
-        $parts = explode('.', str_replace('`', '', $name));
-        if (isset($parts[1])) {
-            $resolvedName->schemaName = $parts[0];
-            $resolvedName->name = $parts[1];
-        } else {
-            $resolvedName->schemaName = $this->defaultSchema;
-            $resolvedName->name = $name;
-        }
-        $resolvedName->fullName = ($resolvedName->schemaName !== $this->defaultSchema ? $resolvedName->schemaName . '.' : '') . $resolvedName->name;
-        return $resolvedName;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function findTableNames($schema = '')
-    {
-        $sql = 'SHOW TABLES';
-        if ($schema !== '') {
-            $sql .= ' FROM ' . $this->quoteSimpleTableName($schema);
-        }
-
-        return $this->db->createCommand($sql)->queryColumn();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function loadTableSchema($name)
-    {
-        $table = new TableSchema();
-        $this->resolveTableNames($table, $name);
-
-        if ($this->findColumns($table)) {
-            $this->findConstraints($table);
-            return $table;
-        }
-
-        return null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function loadTablePrimaryKey($tableName)
-    {
-        return $this->loadTableConstraints($tableName, 'primaryKey');
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function loadTableForeignKeys($tableName)
-    {
-        return $this->loadTableConstraints($tableName, 'foreignKeys');
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function loadTableIndexes($tableName)
-    {
-        static $sql = <<<'SQL'
-SELECT
-    `s`.`INDEX_NAME` AS `name`,
-    `s`.`COLUMN_NAME` AS `column_name`,
-    `s`.`NON_UNIQUE` ^ 1 AS `index_is_unique`,
-    `s`.`INDEX_NAME` = 'PRIMARY' AS `index_is_primary`
-FROM `information_schema`.`STATISTICS` AS `s`
-WHERE `s`.`TABLE_SCHEMA` = COALESCE(:schemaName, DATABASE()) AND `s`.`INDEX_SCHEMA` = `s`.`TABLE_SCHEMA` AND `s`.`TABLE_NAME` = :tableName
-ORDER BY `s`.`SEQ_IN_INDEX` ASC
-SQL;
-
-        $resolvedName = $this->resolveTableName($tableName);
-        $indexes = $this->db->createCommand($sql, [
-            ':schemaName' => $resolvedName->schemaName,
-            ':tableName' => $resolvedName->name,
-        ])->queryAll();
-        $indexes = $this->normalizePdoRowKeyCase($indexes, true);
-        $indexes = ArrayHelper::index($indexes, null, 'name');
-        $result = [];
-        foreach ($indexes as $name => $index) {
-            $result[] = ObjectFactory::createObject(['class' => IndexConstraint::class,
-                'isPrimary' => (bool) $index[0]['index_is_primary'],
-                'isUnique' => (bool) $index[0]['index_is_unique'],
-                'name' => $name !== 'PRIMARY' ? $name : null,
-                'columnNames' => ArrayHelper::getColumn($index, 'column_name'),
-            ]);
-        }
-
-        return $result;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function loadTableUniques($tableName)
-    {
-        return $this->loadTableConstraints($tableName, 'uniques');
-    }
-
-    /**
-     * {@inheritdoc}
-     * @throws NotSupportedException if this method is called.
-     */
-    protected function loadTableChecks($tableName)
-    {
-        throw new NotSupportedException('MySQL does not support check constraints.');
-    }
-
-    /**
-     * {@inheritdoc}
-     * @throws NotSupportedException if this method is called.
-     */
-    protected function loadTableDefaultValues($tableName)
-    {
-        throw new NotSupportedException('MySQL does not support default value constraints.');
-    }
+    private $_oldMysql;
 
     /**
      * Creates a query builder for the MySQL database.
@@ -215,208 +88,6 @@ SQL;
     public function createQueryBuilder()
     {
         return new QueryBuilder($this->db);
-    }
-
-    /**
-     * Resolves the table name and schema name (if any).
-     * @param TableSchema $table the table metadata object
-     * @param string $name the table name
-     */
-    protected function resolveTableNames($table, $name)
-    {
-        $parts = explode('.', str_replace('`', '', $name));
-        if (isset($parts[1])) {
-            $table->schemaName = $parts[0];
-            $table->name = $parts[1];
-            $table->fullName = $table->schemaName . '.' . $table->name;
-        } else {
-            $table->fullName = $table->name = $parts[0];
-        }
-    }
-
-    /**
-     * Loads the column information into a [[ColumnSchema]] object.
-     * @param array $info column information
-     * @return ColumnSchema the column schema object
-     */
-    protected function loadColumnSchema($info)
-    {
-        $column = $this->createColumnSchema();
-
-        $column->name = $info['field'];
-        $column->allowNull = $info['null'] === 'YES';
-        $column->isPrimaryKey = strpos($info['key'], 'PRI') !== false;
-        $column->autoIncrement = stripos($info['extra'], 'auto_increment') !== false;
-        $column->comment = $info['comment'];
-
-        $column->dbType = $info['type'];
-        $column->unsigned = stripos($column->dbType, 'unsigned') !== false;
-
-        $column->type = self::TYPE_STRING;
-        if (preg_match('/^(\w+)(?:\(([^\)]+)\))?/', $column->dbType, $matches)) {
-            $type = strtolower($matches[1]);
-            if (isset($this->typeMap[$type])) {
-                $column->type = $this->typeMap[$type];
-            }
-            if (!empty($matches[2])) {
-                if ($type === 'enum') {
-                    preg_match_all("/'[^']*'/", $matches[2], $values);
-                    foreach ($values[0] as $i => $value) {
-                        $values[$i] = trim($value, "'");
-                    }
-                    $column->enumValues = $values;
-                } else {
-                    $values = explode(',', $matches[2]);
-                    $column->size = $column->precision = (int) $values[0];
-                    if (isset($values[1])) {
-                        $column->scale = (int) $values[1];
-                    }
-                    if ($column->size === 1 && $type === 'bit') {
-                        $column->type = 'boolean';
-                    } elseif ($type === 'bit') {
-                        if ($column->size > 32) {
-                            $column->type = 'bigint';
-                        } elseif ($column->size === 32) {
-                            $column->type = 'integer';
-                        }
-                    }
-                }
-            }
-        }
-
-        $column->phpType = $this->getColumnPhpType($column);
-
-        if (!$column->isPrimaryKey) {
-            if (($column->type === 'timestamp' || $column->type ==='datetime') && $info['default'] === 'CURRENT_TIMESTAMP') {
-                $column->defaultValue = new Expression('CURRENT_TIMESTAMP');
-            } elseif (isset($type) && $type === 'bit') {
-                $column->defaultValue = bindec(trim($info['default'], 'b\''));
-            } else {
-                $column->defaultValue = $column->phpTypecast($info['default']);
-            }
-        }
-
-        return $column;
-    }
-
-    /**
-     * Collects the metadata of table columns.
-     * @param TableSchema $table the table metadata
-     * @return bool whether the table exists in the database
-     * @throws \Exception if DB query fails
-     */
-    protected function findColumns($table)
-    {
-        $sql = 'SHOW FULL COLUMNS FROM ' . $this->quoteTableName($table->fullName);
-        try {
-            $columns = $this->db->createCommand($sql)->queryAll();
-        } catch (\Exception $e) {
-            $previous = $e->getPrevious();
-            if ($previous instanceof \PDOException && strpos($previous->getMessage(), 'SQLSTATE[42S02') !== false) {
-                // table does not exist
-                // https://dev.mysql.com/doc/refman/5.5/en/error-messages-server.html#error_er_bad_table_error
-                return false;
-            }
-            throw $e;
-        }
-        foreach ($columns as $info) {
-            if ($this->db->slavePdo->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER) {
-                $info = array_change_key_case($info, CASE_LOWER);
-            }
-            $column = $this->loadColumnSchema($info);
-            $table->columns[$column->name] = $column;
-            if ($column->isPrimaryKey) {
-                $table->primaryKey[] = $column->name;
-                if ($column->autoIncrement) {
-                    $table->sequenceName = '';
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Gets the CREATE TABLE sql string.
-     * @param TableSchema $table the table metadata
-     * @return string $sql the result of 'SHOW CREATE TABLE'
-     */
-    protected function getCreateTableSql($table)
-    {
-        $row = $this->db->createCommand('SHOW CREATE TABLE ' . $this->quoteTableName($table->fullName))->queryOne();
-        if (isset($row['Create Table'])) {
-            $sql = $row['Create Table'];
-        } else {
-            $row = array_values($row);
-            $sql = $row[1];
-        }
-
-        return $sql;
-    }
-
-    /**
-     * Collects the foreign key column details for the given table.
-     * @param TableSchema $table the table metadata
-     * @throws \Exception
-     */
-    protected function findConstraints($table)
-    {
-        $sql = <<<'SQL'
-SELECT
-    kcu.constraint_name,
-    kcu.column_name,
-    kcu.referenced_table_name,
-    kcu.referenced_column_name
-FROM information_schema.referential_constraints AS rc
-JOIN information_schema.key_column_usage AS kcu ON
-    (
-        kcu.constraint_catalog = rc.constraint_catalog OR
-        (kcu.constraint_catalog IS NULL AND rc.constraint_catalog IS NULL)
-    ) AND
-    kcu.constraint_schema = rc.constraint_schema AND
-    kcu.constraint_name = rc.constraint_name
-WHERE rc.constraint_schema = database() AND kcu.table_schema = database()
-AND rc.table_name = :tableName AND kcu.table_name = :tableName1
-SQL;
-
-        try {
-            $rows = $this->db->createCommand($sql, [':tableName' => $table->name, ':tableName1' => $table->name])->queryAll();
-            $constraints = [];
-
-            foreach ($rows as $row) {
-                $constraints[$row['constraint_name']]['referenced_table_name'] = $row['referenced_table_name'];
-                $constraints[$row['constraint_name']]['columns'][$row['column_name']] = $row['referenced_column_name'];
-            }
-
-            $table->foreignKeys = [];
-            foreach ($constraints as $name => $constraint) {
-                $table->foreignKeys[$name] = array_merge(
-                    [$constraint['referenced_table_name']],
-                    $constraint['columns']
-                );
-            }
-        } catch (\Exception $e) {
-            $previous = $e->getPrevious();
-            if (!$previous instanceof \PDOException || strpos($previous->getMessage(), 'SQLSTATE[42S02') === false) {
-                throw $e;
-            }
-
-            // table does not exist, try to determine the foreign keys using the table creation sql
-            $sql = $this->getCreateTableSql($table);
-            $regexp = '/FOREIGN KEY\s+\(([^\)]+)\)\s+REFERENCES\s+([^\(^\s]+)\s*\(([^\)]+)\)/mi';
-            if (preg_match_all($regexp, $sql, $matches, PREG_SET_ORDER)) {
-                foreach ($matches as $match) {
-                    $fks = array_map('trim', explode(',', str_replace('`', '', $match[1])));
-                    $pks = array_map('trim', explode(',', str_replace('`', '', $match[3])));
-                    $constraint = [str_replace('`', '', $match[2])];
-                    foreach ($fks as $k => $name) {
-                        $constraint[$name] = $pks[$k];
-                    }
-                    $table->foreignKeys[md5(serialize($constraint))] = $constraint;
-                }
-                $table->foreignKeys = array_values($table->foreignKeys);
-            }
-        }
     }
 
     /**
@@ -460,19 +131,243 @@ SQL;
     }
 
     /**
-     * @return bool whether the version of the MySQL being used is older than 5.1.
-     * @throws InvalidConfigException
-     * @throws Exception
-     * @since 2.0.13
+     * {@inheritdoc}
      */
-    protected function isOldMysql()
+    protected function findTableNames($schema = '')
     {
-        if ($this->_oldMysql === null) {
-            $version = $this->db->getSlavePdo()->getAttribute(\PDO::ATTR_SERVER_VERSION);
-            $this->_oldMysql = version_compare($version, '5.1', '<=');
+        $sql = 'SHOW TABLES';
+        if ($schema !== '') {
+            $sql .= ' FROM ' . $this->quoteSimpleTableName($schema);
         }
 
-        return $this->_oldMysql;
+        return $this->db->createCommand($sql)->queryColumn();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function loadTableSchema($name)
+    {
+        $table = new TableSchema();
+        $this->resolveTableNames($table, $name);
+
+        if ($this->findColumns($table)) {
+            $this->findConstraints($table);
+            return $table;
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolves the table name and schema name (if any).
+     * @param TableSchema $table the table metadata object
+     * @param string $name the table name
+     */
+    protected function resolveTableNames($table, $name)
+    {
+        $parts = explode('.', str_replace('`', '', $name));
+        if (isset($parts[1])) {
+            $table->schemaName = $parts[0];
+            $table->name = $parts[1];
+            $table->fullName = $table->schemaName . '.' . $table->name;
+        } else {
+            $table->fullName = $table->name = $parts[0];
+        }
+    }
+
+    /**
+     * Collects the metadata of table columns.
+     * @param TableSchema $table the table metadata
+     * @return bool whether the table exists in the database
+     * @throws \Exception if DB query fails
+     */
+    protected function findColumns($table)
+    {
+        $sql = 'SHOW FULL COLUMNS FROM ' . $this->quoteTableName($table->fullName);
+        try {
+            $columns = $this->db->createCommand($sql)->queryAll();
+        } catch (\Exception $e) {
+            $previous = $e->getPrevious();
+            if ($previous instanceof \PDOException && strpos($previous->getMessage(), 'SQLSTATE[42S02') !== false) {
+                // table does not exist
+                // https://dev.mysql.com/doc/refman/5.5/en/error-messages-server.html#error_er_bad_table_error
+                return false;
+            }
+            throw $e;
+        }
+        foreach ($columns as $info) {
+            if ($this->db->slavePdo->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER) {
+                $info = array_change_key_case($info, CASE_LOWER);
+            }
+            $column = $this->loadColumnSchema($info);
+            $table->columns[$column->name] = $column;
+            if ($column->isPrimaryKey) {
+                $table->primaryKey[] = $column->name;
+                if ($column->autoIncrement) {
+                    $table->sequenceName = '';
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Loads the column information into a [[ColumnSchema]] object.
+     * @param array $info column information
+     * @return ColumnSchema the column schema object
+     */
+    protected function loadColumnSchema($info)
+    {
+        $column = $this->createColumnSchema();
+
+        $column->name = $info['field'];
+        $column->allowNull = $info['null'] === 'YES';
+        $column->isPrimaryKey = strpos($info['key'], 'PRI') !== false;
+        $column->autoIncrement = stripos($info['extra'], 'auto_increment') !== false;
+        $column->comment = $info['comment'];
+
+        $column->dbType = $info['type'];
+        $column->unsigned = stripos($column->dbType, 'unsigned') !== false;
+
+        $column->type = self::TYPE_STRING;
+        if (preg_match('/^(\w+)(?:\(([^\)]+)\))?/', $column->dbType, $matches)) {
+            $type = strtolower($matches[1]);
+            if (isset($this->typeMap[$type])) {
+                $column->type = $this->typeMap[$type];
+            }
+            if (!empty($matches[2])) {
+                if ($type === 'enum') {
+                    preg_match_all("/'[^']*'/", $matches[2], $values);
+                    foreach ($values[0] as $i => $value) {
+                        $values[$i] = trim($value, "'");
+                    }
+                    $column->enumValues = $values;
+                } else {
+                    $values = explode(',', $matches[2]);
+                    $column->size = $column->precision = (int)$values[0];
+                    if (isset($values[1])) {
+                        $column->scale = (int)$values[1];
+                    }
+                    if ($column->size === 1 && $type === 'bit') {
+                        $column->type = 'boolean';
+                    } elseif ($type === 'bit') {
+                        if ($column->size > 32) {
+                            $column->type = 'bigint';
+                        } elseif ($column->size === 32) {
+                            $column->type = 'integer';
+                        }
+                    }
+                }
+            }
+        }
+
+        $column->phpType = $this->getColumnPhpType($column);
+
+        if (!$column->isPrimaryKey) {
+            if (($column->type === 'timestamp' || $column->type === 'datetime') && $info['default'] === 'CURRENT_TIMESTAMP') {
+                $column->defaultValue = new Expression('CURRENT_TIMESTAMP');
+            } elseif (isset($type) && $type === 'bit') {
+                $column->defaultValue = bindec(trim($info['default'], 'b\''));
+            } else {
+                $column->defaultValue = $column->phpTypecast($info['default']);
+            }
+        }
+
+        return $column;
+    }
+
+    /**
+     * Collects the foreign key column details for the given table.
+     * @param TableSchema $table the table metadata
+     * @throws \Exception
+     */
+    protected function findConstraints($table)
+    {
+        $sql = <<<'SQL'
+SELECT
+    kcu.constraint_name,
+    kcu.column_name,
+    kcu.referenced_table_name,
+    kcu.referenced_column_name
+FROM information_schema.referential_constraints AS rc
+JOIN information_schema.key_column_usage AS kcu ON
+    (
+        kcu.constraint_catalog = rc.constraint_catalog OR
+        (kcu.constraint_catalog IS NULL AND rc.constraint_catalog IS NULL)
+    ) AND
+    kcu.constraint_schema = rc.constraint_schema AND
+    kcu.constraint_name = rc.constraint_name
+WHERE rc.constraint_schema = database() AND kcu.table_schema = database()
+AND rc.table_name = :tableName AND kcu.table_name = :tableName1
+SQL;
+
+        try {
+            $rows = $this->db->createCommand($sql,
+                [':tableName' => $table->name, ':tableName1' => $table->name])->queryAll();
+            $constraints = [];
+
+            foreach ($rows as $row) {
+                $constraints[$row['constraint_name']]['referenced_table_name'] = $row['referenced_table_name'];
+                $constraints[$row['constraint_name']]['columns'][$row['column_name']] = $row['referenced_column_name'];
+            }
+
+            $table->foreignKeys = [];
+            foreach ($constraints as $name => $constraint) {
+                $table->foreignKeys[$name] = array_merge(
+                    [$constraint['referenced_table_name']],
+                    $constraint['columns']
+                );
+            }
+        } catch (\Exception $e) {
+            $previous = $e->getPrevious();
+            if (!$previous instanceof \PDOException || strpos($previous->getMessage(), 'SQLSTATE[42S02') === false) {
+                throw $e;
+            }
+
+            // table does not exist, try to determine the foreign keys using the table creation sql
+            $sql = $this->getCreateTableSql($table);
+            $regexp = '/FOREIGN KEY\s+\(([^\)]+)\)\s+REFERENCES\s+([^\(^\s]+)\s*\(([^\)]+)\)/mi';
+            if (preg_match_all($regexp, $sql, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $match) {
+                    $fks = array_map('trim', explode(',', str_replace('`', '', $match[1])));
+                    $pks = array_map('trim', explode(',', str_replace('`', '', $match[3])));
+                    $constraint = [str_replace('`', '', $match[2])];
+                    foreach ($fks as $k => $name) {
+                        $constraint[$name] = $pks[$k];
+                    }
+                    $table->foreignKeys[md5(serialize($constraint))] = $constraint;
+                }
+                $table->foreignKeys = array_values($table->foreignKeys);
+            }
+        }
+    }
+
+    /**
+     * Gets the CREATE TABLE sql string.
+     * @param TableSchema $table the table metadata
+     * @return string $sql the result of 'SHOW CREATE TABLE'
+     */
+    protected function getCreateTableSql($table)
+    {
+        $row = $this->db->createCommand('SHOW CREATE TABLE ' . $this->quoteTableName($table->fullName))->queryOne();
+        if (isset($row['Create Table'])) {
+            $sql = $row['Create Table'];
+        } else {
+            $row = array_values($row);
+            $sql = $row[1];
+        }
+
+        return $sql;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function loadTablePrimaryKey($tableName)
+    {
+        return $this->loadTableConstraints($tableName, 'primaryKey');
     }
 
     /**
@@ -544,12 +439,14 @@ SQL;
             foreach ($names as $name => $constraint) {
                 switch ($type) {
                     case 'PRIMARY KEY':
-                        $result['primaryKey'] = ObjectFactory::createObject(['class' => Constraint::class,
+                        $result['primaryKey'] = ObjectFactory::createObject([
+                            'class' => Constraint::class,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
                         ]);
                         break;
                     case 'FOREIGN KEY':
-                        $result['foreignKeys'][] = ObjectFactory::createObject(['class' => ForeignKeyConstraint::class,
+                        $result['foreignKeys'][] = ObjectFactory::createObject([
+                            'class' => ForeignKeyConstraint::class,
                             'name' => $name,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
                             'foreignSchemaName' => $constraint[0]['foreign_table_schema'],
@@ -560,7 +457,8 @@ SQL;
                         ]);
                         break;
                     case 'UNIQUE':
-                        $result['uniques'][] = ObjectFactory::createObject(['class' => Constraint::class,
+                        $result['uniques'][] = ObjectFactory::createObject([
+                            'class' => Constraint::class,
                             'name' => $name,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
                         ]);
@@ -573,5 +471,110 @@ SQL;
         }
 
         return $result[$returnType];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function resolveTableName($name)
+    {
+        $resolvedName = new TableSchema();
+        $parts = explode('.', str_replace('`', '', $name));
+        if (isset($parts[1])) {
+            $resolvedName->schemaName = $parts[0];
+            $resolvedName->name = $parts[1];
+        } else {
+            $resolvedName->schemaName = $this->defaultSchema;
+            $resolvedName->name = $name;
+        }
+        $resolvedName->fullName = ($resolvedName->schemaName !== $this->defaultSchema ? $resolvedName->schemaName . '.' : '') . $resolvedName->name;
+        return $resolvedName;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function loadTableForeignKeys($tableName)
+    {
+        return $this->loadTableConstraints($tableName, 'foreignKeys');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function loadTableIndexes($tableName)
+    {
+        static $sql = <<<'SQL'
+SELECT
+    `s`.`INDEX_NAME` AS `name`,
+    `s`.`COLUMN_NAME` AS `column_name`,
+    `s`.`NON_UNIQUE` ^ 1 AS `index_is_unique`,
+    `s`.`INDEX_NAME` = 'PRIMARY' AS `index_is_primary`
+FROM `information_schema`.`STATISTICS` AS `s`
+WHERE `s`.`TABLE_SCHEMA` = COALESCE(:schemaName, DATABASE()) AND `s`.`INDEX_SCHEMA` = `s`.`TABLE_SCHEMA` AND `s`.`TABLE_NAME` = :tableName
+ORDER BY `s`.`SEQ_IN_INDEX` ASC
+SQL;
+
+        $resolvedName = $this->resolveTableName($tableName);
+        $indexes = $this->db->createCommand($sql, [
+            ':schemaName' => $resolvedName->schemaName,
+            ':tableName' => $resolvedName->name,
+        ])->queryAll();
+        $indexes = $this->normalizePdoRowKeyCase($indexes, true);
+        $indexes = ArrayHelper::index($indexes, null, 'name');
+        $result = [];
+        foreach ($indexes as $name => $index) {
+            $result[] = ObjectFactory::createObject([
+                'class' => IndexConstraint::class,
+                'isPrimary' => (bool)$index[0]['index_is_primary'],
+                'isUnique' => (bool)$index[0]['index_is_unique'],
+                'name' => $name !== 'PRIMARY' ? $name : null,
+                'columnNames' => ArrayHelper::getColumn($index, 'column_name'),
+            ]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function loadTableUniques($tableName)
+    {
+        return $this->loadTableConstraints($tableName, 'uniques');
+    }
+
+    /**
+     * {@inheritdoc}
+     * @throws NotSupportedException if this method is called.
+     */
+    protected function loadTableChecks($tableName)
+    {
+        throw new NotSupportedException('MySQL does not support check constraints.');
+    }
+
+    /**
+     * {@inheritdoc}
+     * @throws NotSupportedException if this method is called.
+     */
+    protected function loadTableDefaultValues($tableName)
+    {
+        throw new NotSupportedException('MySQL does not support default value constraints.');
+    }
+
+    /**
+     * @return bool whether the version of the MySQL being used is older than 5.1.
+     * @throws InvalidConfigException
+     * @throws Exception
+     * @since 2.0.13
+     */
+    protected function isOldMysql()
+    {
+        if ($this->_oldMysql === null) {
+            $version = $this->db->getSlavePdo()->getAttribute(\PDO::ATTR_SERVER_VERSION);
+            $this->_oldMysql = version_compare($version, '5.1', '<=');
+        }
+
+        return $this->_oldMysql;
     }
 }
