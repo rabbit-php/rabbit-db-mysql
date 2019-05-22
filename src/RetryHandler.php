@@ -4,15 +4,34 @@
 namespace rabbit\db\mysql;
 
 use rabbit\db\Command;
+use rabbit\db\Exception;
+use rabbit\db\RetryHandlerInterface;
 
 /**
  * Class RetryHandler
  * @package rabbit\db\mysql
  */
-class RetryHandler
+class RetryHandler implements RetryHandlerInterface
 {
     /** @var int */
-    private $totalCount = 3;
+    private $totalCount;
+
+    /**
+     * RetryHandler constructor.
+     * @param int $totalCount
+     */
+    public function __construct(int $totalCount = 3)
+    {
+        $this->totalCount = $totalCount;
+    }
+
+    /**
+     * @param int $count
+     */
+    public function setTotalCount(int $count): void
+    {
+        $this->totalCount = $count;
+    }
 
     /**
      * @param Connection $db
@@ -22,34 +41,32 @@ class RetryHandler
     public function handle(Command $cmd, \Throwable $e, int $count): bool
     {
         if ($count >= $this->totalCount) {
+            $this->totalCount = 0;
             return false;
         }
         $isConnectionError = $this->isConnectionError($e);
         if ($isConnectionError) {
             $cmd->cancel();
             $cmd->db->reconnect();
-            $this->totalCount++;
+            return true;
         }
+        return false;
     }
 
     /**
+     * @param Command $cmd
      * @param \Throwable $exception
      * @return bool
      */
     private function isConnectionError(\Throwable $exception): bool
     {
-        if ($exception instanceof \PDOException) {
-            $errorInfo = $this->pdoStatement->errorInfo();
+        if ($exception instanceof Exception) {
+            $errorInfo = $exception->errorInfo;
             if ($errorInfo[1] == 70100 || $errorInfo[1] == 2006) {
                 return true;
             }
-        } elseif ($exception instanceof \ErrorException) {
-            if (strpos($exception->getMessage(), 'MySQL server has gone away') !== false) {
-                return true;
-            }
-        }
-        $message = $exception->getMessage();
-        if (strpos($message, 'Error while sending QUERY packet. PID=') !== false) {
+        } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos($message,
+                'Error while sending QUERY packet. PID=') !== false) {
             return true;
         }
         return false;
