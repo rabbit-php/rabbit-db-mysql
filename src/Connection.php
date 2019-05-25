@@ -27,11 +27,10 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
      * Connection constructor.
      * @param array|null $dsn
      */
-    public function __construct(array $dsn = null)
+    public function __construct()
     {
         $this->lastTime = time();
         $this->connectionId = uniqid();
-        parent::__construct($dsn);
     }
 
     public function createConnection(): void

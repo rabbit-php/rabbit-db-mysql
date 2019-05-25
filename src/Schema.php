@@ -123,6 +123,24 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
     }
 
     /**
+     * Gets the CREATE TABLE sql string.
+     * @param TableSchema $table the table metadata
+     * @return string $sql the result of 'SHOW CREATE TABLE'
+     */
+    protected function getCreateTableSql($table)
+    {
+        $row = $this->db->createCommand('SHOW CREATE TABLE ' . $this->quoteTableName($table->fullName))->queryOne();
+        if (isset($row['Create Table'])) {
+            $sql = $row['Create Table'];
+        } else {
+            $row = array_values($row);
+            $sql = $row[1];
+        }
+
+        return $sql;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function createColumnSchemaBuilder($type, $length = null)
@@ -342,24 +360,6 @@ SQL;
                 $table->foreignKeys = array_values($table->foreignKeys);
             }
         }
-    }
-
-    /**
-     * Gets the CREATE TABLE sql string.
-     * @param TableSchema $table the table metadata
-     * @return string $sql the result of 'SHOW CREATE TABLE'
-     */
-    protected function getCreateTableSql($table)
-    {
-        $row = $this->db->createCommand('SHOW CREATE TABLE ' . $this->quoteTableName($table->fullName))->queryOne();
-        if (isset($row['Create Table'])) {
-            $sql = $row['Create Table'];
-        } else {
-            $row = array_values($row);
-            $sql = $row[1];
-        }
-
-        return $sql;
     }
 
     /**
