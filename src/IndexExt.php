@@ -4,6 +4,7 @@ namespace rabbit\db\mysql;
 
 use rabbit\activerecord\ActiveRecord;
 use rabbit\db\DBHelper;
+use rabbit\db\Query;
 
 /**
  * Class IndexExt
@@ -12,17 +13,13 @@ use rabbit\db\DBHelper;
 class IndexExt
 {
     /**
-     * @param ActiveRecord $model
-     * @param array|null $filter
-     * @param int|null $page
+     * @param Query $query
+     * @param array $filter
+     * @param int $page
      * @return array
      */
-    public static function index(ActiveRecord $model, array $filter = null, int $page = null): array
+    public static function index(Query $query, array $filter = [], int $page = 0): array
     {
-        if ($filter instanceof Query) {
-            return DBHelper::SearchList($filter, [], $page);
-        } else {
-            return DBHelper::SearchList($model::find(), $filter, $page);
-        }
+        return DBHelper::SearchList($query, $filter, $page);
     }
 }
