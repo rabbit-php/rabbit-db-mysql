@@ -78,15 +78,13 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     }
 
     /**
-     * 批量更新
      * @param ActiveRecord $model
      * @param array $array_columns
-     * @param Transaction|null $transaction
-     * @return mixed
+     * @return int
      * @throws HttpException
      * @throws \rabbit\exception\InvalidConfigException
      */
-    public function saveSeveral(ActiveRecord $model, array $array_columns, Transaction $transaction = null): int
+    public function saveSeveral(ActiveRecord $model, array $array_columns): int
     {
         $sql = '';
         $params = array();
@@ -164,12 +162,11 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     /**
      * @param ActiveRecord $table
      * @param array $array_columns
-     * @param Transaction|null $transaction
-     * @return bool|int
+     * @return int
      * @throws \rabbit\db\Exception
      * @throws \rabbit\exception\InvalidConfigException
      */
-    public function deleteSeveral(ActiveRecord $table, array $array_columns, Transaction $transaction = null): int
+    public function deleteSeveral(ActiveRecord $table, array $array_columns): int
     {
         $result = false;
         $keys = $table::primaryKey();
