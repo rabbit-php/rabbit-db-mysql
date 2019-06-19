@@ -37,12 +37,7 @@ class MakeMysqlConnection
                             'maxActive' => intval($pool['max'] / swoole_cpu_num()),
                             'maxWait' => $pool['wait']
                         ], [], false)
-                    ], [], false),
-                    'emulatePrepare' => false,
-                    'attributes' => [
-                        \PDO::ATTR_STRINGIFY_FETCHES => false,
-                        \PDO::ATTR_EMULATE_PREPARES => false,
-                    ]
+                    ], [], false)
                 ]
             ]);
         }
