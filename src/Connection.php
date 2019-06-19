@@ -122,7 +122,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $table->load($item, '');
             $table->isNewRecord = false;
             if (!$table->validate()) {
-                throw new HttpException(implode(BREAKS, $table->getErrors()));
+                throw new HttpException(implode(BREAKS, $table->getFirstErrors()));
             }
             if ($keys) {
                 foreach ($keys as $key) {
