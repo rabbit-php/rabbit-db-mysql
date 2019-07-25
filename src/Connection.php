@@ -10,13 +10,14 @@ namespace rabbit\db\mysql;
 
 
 use rabbit\activerecord\ActiveRecord;
+use rabbit\App;
 use rabbit\db\ConnectionTrait;
 use rabbit\db\DbContext;
 use rabbit\db\Expression;
-use rabbit\db\Transaction;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
 use rabbit\pool\ConnectionInterface;
+use rabbit\pool\PoolInterface;
 use rabbit\web\HttpException;
 
 class Connection extends \rabbit\db\Connection implements ConnectionInterface
@@ -27,10 +28,13 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
      * Connection constructor.
      * @param array|null $dsn
      */
-    public function __construct()
+    public function __construct(string $dsn, PoolInterface $pool)
     {
         $this->lastTime = time();
         $this->connectionId = uniqid();
+        $this->dsn = $dsn;
+        $this->pool = $pool;
+        $this->createConnection();
     }
 
     public function createConnection(): void
@@ -40,7 +44,9 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
 
     public function reconnect(): void
     {
-        $this->close();
+        unset($this->pdo);
+        $this->pdo = null;
+        App::warning('Reconnect DB connection: ' . $this->shortDsn, 'db');
         $this->open();
     }
 

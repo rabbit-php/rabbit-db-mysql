@@ -4,6 +4,7 @@
 namespace rabbit\db\mysql;
 
 use rabbit\db\Command;
+use rabbit\db\ConnectionInterface;
 use rabbit\db\Exception;
 use rabbit\db\RetryHandlerInterface;
 
@@ -11,11 +12,8 @@ use rabbit\db\RetryHandlerInterface;
  * Class RetryHandler
  * @package rabbit\db\mysql
  */
-class RetryHandler implements RetryHandlerInterface
+class RetryHandler extends RetryHandlerInterface
 {
-    /** @var int */
-    private $totalCount;
-
     /**
      * RetryHandler constructor.
      * @param int $totalCount
@@ -23,6 +21,13 @@ class RetryHandler implements RetryHandlerInterface
     public function __construct(int $totalCount = 3)
     {
         $this->totalCount = $totalCount;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalCount():int {
+        return $this->totalCount;
     }
 
     /**
@@ -38,16 +43,11 @@ class RetryHandler implements RetryHandlerInterface
      * @param \Throwable $e
      * @param int $count
      */
-    public function handle(Command $cmd, \Throwable $e, int $count): bool
+    public function handle(ConnectionInterface $db, \Throwable $e, int $count): bool
     {
-        if ($count >= $this->totalCount) {
-            $this->totalCount = 0;
-            return false;
-        }
         $isConnectionError = $this->isConnectionError($e);
-        if ($isConnectionError) {
-            $cmd->cancel();
-            $cmd->db->reconnect();
+        if ($isConnectionError && $count < $this->totalCount) {
+            $db->reconnect();
             return true;
         }
         return false;
@@ -65,9 +65,6 @@ class RetryHandler implements RetryHandlerInterface
             if ($errorInfo[1] == 70100 || $errorInfo[1] == 2006) {
                 return true;
             }
-        } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos($message,
-                'Error while sending QUERY packet. PID=') !== false) {
-            return true;
         }
         return false;
     }
