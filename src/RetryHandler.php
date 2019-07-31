@@ -52,7 +52,7 @@ class RetryHandler extends RetryHandlerInterface
         $isConnectionError = $this->isConnectionError($e);
         if ($isConnectionError && $count < $this->totalCount) {
             $count > 1 && \Co::sleep($this->sleep);
-            $db->reconnect();
+            $db->reconnect($count);
             return true;
         }
         return false;
