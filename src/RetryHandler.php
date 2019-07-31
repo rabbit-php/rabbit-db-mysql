@@ -14,6 +14,9 @@ use rabbit\db\RetryHandlerInterface;
  */
 class RetryHandler extends RetryHandlerInterface
 {
+    /** @var int */
+    private $sleep = 1;
+
     /**
      * RetryHandler constructor.
      * @param int $totalCount
@@ -26,7 +29,8 @@ class RetryHandler extends RetryHandlerInterface
     /**
      * @return int
      */
-    public function getTotalCount():int {
+    public function getTotalCount(): int
+    {
         return $this->totalCount;
     }
 
@@ -47,6 +51,7 @@ class RetryHandler extends RetryHandlerInterface
     {
         $isConnectionError = $this->isConnectionError($e);
         if ($isConnectionError && $count < $this->totalCount) {
+            $count > 1 && \Co::sleep($this->sleep);
             $db->reconnect();
             return true;
         }

@@ -42,12 +42,12 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         $this->open();
     }
 
-    public function reconnect(): void
+    public function reconnect(int $attempt = 0): void
     {
         unset($this->pdo);
         $this->pdo = null;
         App::warning('Reconnect DB connection: ' . $this->shortDsn, 'db');
-        $this->open();
+        $this->open($attempt);
     }
 
     /**
