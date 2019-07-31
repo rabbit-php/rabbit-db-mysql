@@ -43,9 +43,10 @@ class RetryHandler extends RetryHandlerInterface
     }
 
     /**
-     * @param Connection $db
+     * @param ConnectionInterface $db
      * @param \Throwable $e
      * @param int $count
+     * @return bool
      */
     public function handle(ConnectionInterface $db, \Throwable $e, int $count): bool
     {
@@ -59,7 +60,6 @@ class RetryHandler extends RetryHandlerInterface
     }
 
     /**
-     * @param Command $cmd
      * @param \Throwable $exception
      * @return bool
      */
