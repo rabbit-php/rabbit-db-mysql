@@ -3,7 +3,6 @@
 
 namespace rabbit\db\mysql;
 
-use rabbit\db\Command;
 use rabbit\db\ConnectionInterface;
 use rabbit\db\Exception;
 use rabbit\db\RetryHandlerInterface;
@@ -68,6 +67,9 @@ class RetryHandler extends RetryHandlerInterface
         if ($exception instanceof Exception) {
             $errorInfo = $exception->errorInfo;
             if ($errorInfo[1] == 70100 || $errorInfo[1] == 2006) {
+                return true;
+            } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos($message,
+                    'Error while sending QUERY packet. PID=') !== false) {
                 return true;
             }
         }
