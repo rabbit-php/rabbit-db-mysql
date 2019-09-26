@@ -17,7 +17,7 @@ use rabbit\db\Expression;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
 use rabbit\pool\ConnectionInterface;
-use rabbit\pool\PoolInterface;
+use rabbit\pool\PoolManager;
 use rabbit\web\HttpException;
 
 class Connection extends \rabbit\db\Connection implements ConnectionInterface
@@ -28,12 +28,12 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
      * Connection constructor.
      * @param array|null $dsn
      */
-    public function __construct(string $dsn, PoolInterface $pool)
+    public function __construct(string $dsn, string $poolKey)
     {
         parent::__construct($dsn);
         $this->lastTime = time();
         $this->connectionId = uniqid();
-        $this->pool = $pool;
+        $this->poolKey = $poolKey;
         $this->createConnection();
     }
 
@@ -78,7 +78,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             return;
         }
         if ($this->isAutoRelease() || $release) {
-            $this->pool->release($this);
+            PoolManager::getPool($this->poolKey)->release($this);
             DbContext::delete($name);
         }
     }
