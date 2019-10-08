@@ -42,6 +42,31 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         $this->open();
     }
 
+    /**
+     * @return mixed|\PDO
+     */
+    protected function createPdoInstance()
+    {
+        $pdoClass = $this->pdoClass;
+        if ($pdoClass === null) {
+            $pdoClass = 'PDO';
+        }
+
+        $parsed = parse_url($this->dsn);
+        isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
+        [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray($parsed,
+            ['scheme', 'host', 'port', 'user', 'pass', 'query'], null, ['mysql', 'localhost', '3306', '', '', []]);
+        $parts = [];
+        foreach ($query as $key => $value) {
+            $parts[] = "$key=$value";
+        }
+        $dsn = "$driver:host=$host;port=$port;" . implode(';', $parts);
+        $timeout = PoolManager::getPool($this->poolKey)->getTimeout();
+        return new $pdoClass($dsn, $this->username, $this->password, array_merge([
+            PDO::ATTR_TIMEOUT => $timeout,
+        ]), $this->attributes);
+    }
+
     public function reconnect(int $attempt = 0): void
     {
         unset($this->pdo);
