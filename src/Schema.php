@@ -7,6 +7,7 @@
 
 namespace rabbit\db\mysql;
 
+use Co\MySQL;
 use rabbit\core\ObjectFactory;
 use rabbit\db\Constraint;
 use rabbit\db\ConstraintFinderInterface;
@@ -16,6 +17,7 @@ use rabbit\db\Expression;
 use rabbit\db\ForeignKeyConstraint;
 use rabbit\db\IndexConstraint;
 use rabbit\db\TableSchema;
+use rabbit\exception\InvalidCallException;
 use rabbit\exception\InvalidConfigException;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
@@ -123,6 +125,37 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
     }
 
     /**
+     * @param string $sequenceName
+     * @return string
+     */
+    public function getLastInsertID($sequenceName = '')
+    {
+        if ($this->db->isActive) {
+            if ($this->db->pdo instanceof MySQL) {
+                return $this->db->pdo->insert_id;
+            } else {
+                return $this->db->pdo->lastInsertId($sequenceName === '' ? null : $this->quoteTableName($sequenceName));
+            }
+        }
+
+        throw new InvalidCallException('DB Connection is not active.');
+    }
+
+    public function quoteValue($str)
+    {
+        if (!is_string($str)) {
+            return $str;
+        }
+
+        if ($this->db->getSlavePdo() instanceof \PDO && ($value = $this->db->getSlavePdo()->quote($str)) !== false) {
+            return $value;
+        }
+
+        // the driver doesn't support quote (e.g. oci)
+        return "'" . addcslashes(str_replace("'", "''", $str), "\000\n\r\\\032") . "'";
+    }
+
+    /**
      * Gets the CREATE TABLE sql string.
      * @param TableSchema $table the table metadata
      * @return string $sql the result of 'SHOW CREATE TABLE'
@@ -215,7 +248,7 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
             throw $e;
         }
         foreach ($columns as $info) {
-            if ($this->db->slavePdo->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER) {
+            if ($this->db->slavePdo instanceof MySQL || ($this->db->slavePdo->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER)) {
                 $info = array_change_key_case($info, CASE_LOWER);
             }
             $column = $this->loadColumnSchema($info);
@@ -318,12 +351,12 @@ JOIN information_schema.key_column_usage AS kcu ON
     kcu.constraint_schema = rc.constraint_schema AND
     kcu.constraint_name = rc.constraint_name
 WHERE rc.constraint_schema = database() AND kcu.table_schema = database()
-AND rc.table_name = :tableName AND kcu.table_name = :tableName1
+AND rc.table_name = ? AND kcu.table_name = ?
 SQL;
 
         try {
             $rows = $this->db->createCommand($sql,
-                [':tableName' => $table->name, ':tableName1' => $table->name])->queryAll();
+                [$table->name, $table->name])->queryAll();
             $constraints = [];
 
             foreach ($rows as $row) {
