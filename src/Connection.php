@@ -8,7 +8,7 @@
 
 namespace rabbit\db\mysql;
 
-
+use PDO;
 use rabbit\activerecord\ActiveRecord;
 use rabbit\App;
 use rabbit\db\ConnectionTrait;
