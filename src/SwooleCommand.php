@@ -56,7 +56,6 @@ class SwooleCommand extends Command
                 }
             }
         }
-        return $pdo;
     }
 
     /**
@@ -123,6 +122,8 @@ class SwooleCommand extends Command
                         $index++;
                     }
                     break;
+                default:
+                    $result = new SwooleDataReader($this);
             }
         } catch (\Throwable $e) {
             throw $e;
@@ -145,7 +146,7 @@ class SwooleCommand extends Command
         $attempt = 0;
         while (true) {
             try {
-                $pdo = $this->prepare(true);
+                $this->prepare(true);
                 if (
                     ++$attempt === 1
                     && $this->_isolationLevel !== false
@@ -170,7 +171,6 @@ class SwooleCommand extends Command
                 }
             }
         }
-        return $pdo;
     }
 
     /**
@@ -187,8 +187,8 @@ class SwooleCommand extends Command
         }
 
         try {
-            $pdo = $this->internalExecute($rawSql);
-            $n = $pdo->affected_rows;
+            $this->internalExecute($rawSql);
+            $n = $this->pdoStatement->affected_rows;
 
             $this->refreshTableSchema();
 
