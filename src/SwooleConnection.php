@@ -23,6 +23,24 @@ class SwooleConnection extends Connection
     }
 
     /**
+     * @param null $isolationLevel
+     * @return SwooleTransaction|\rabbit\db\Transaction|null
+     * @throws Exception
+     * @throws NotSupportedException
+     */
+    public function beginTransaction($isolationLevel = null)
+    {
+        $this->open();
+
+        if (($transaction = $this->getTransaction()) === null) {
+            $transaction = $this->_transaction = new SwooleTransaction($this);
+        }
+        $transaction->begin($isolationLevel);
+
+        return $transaction;
+    }
+
+    /**
      * @param null $sql
      * @param array $params
      * @return \rabbit\db\Command
