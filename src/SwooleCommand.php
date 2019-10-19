@@ -70,7 +70,7 @@ class SwooleCommand extends Command
      */
     protected function queryInternal($method, $fetchMode = null)
     {
-        $rawSql = $this->logQuery();
+        $rawSql = $this->getRawSql();
 
         if ($method !== '') {
             $info = $this->db->getQueryCacheInfo($this->queryCacheDuration, $this->cache);
@@ -87,10 +87,12 @@ class SwooleCommand extends Command
                 ];
                 $result = unserialize($cache->get($cacheKey));
                 if (is_array($result) && isset($result[0])) {
-                    App::debug('Query result served from cache', 'db');
+                    $this->logQuery($rawSql . '; [Query result served from cache]');
                     return $result[0];
                 }
             }
+        } else {
+            $this->logQuery($rawSql);
         }
 
         try {
@@ -186,8 +188,8 @@ class SwooleCommand extends Command
     public function execute()
     {
         $sql = $this->getSql();
-        $rawSql = $this->logQuery();
-
+        $rawSql = $this->getRawSql();
+        $this->logQuery($rawSql);
         if ($sql == '') {
             return 0;
         }
