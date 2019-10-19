@@ -271,8 +271,11 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     public function addCommentOnColumn($table, $column, $comment)
     {
         // Strip existing comment which may include escaped quotes
-        $definition = trim(preg_replace("/COMMENT '(?:''|[^'])*'/i", '',
-            $this->getColumnDefinition($table, $column)));
+        $definition = trim(preg_replace(
+            "/COMMENT '(?:''|[^'])*'/i",
+            '',
+            $this->getColumnDefinition($table, $column)
+        ));
 
         return 'ALTER TABLE ' . $this->db->quoteTableName($table)
             . ' CHANGE ' . $this->db->quoteColumnName($column)

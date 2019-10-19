@@ -355,8 +355,10 @@ AND rc.table_name = ? AND kcu.table_name = ?
 SQL;
 
         try {
-            $rows = $this->db->createCommand($sql,
-                [$table->name, $table->name])->queryAll();
+            $rows = $this->db->createCommand(
+                $sql,
+                [$table->name, $table->name]
+            )->queryAll();
             $constraints = [];
 
             foreach ($rows as $row) {

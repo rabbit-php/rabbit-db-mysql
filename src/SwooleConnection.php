@@ -3,7 +3,6 @@
 
 namespace rabbit\db\mysql;
 
-
 use Co\MySQL;
 use rabbit\App;
 use rabbit\core\ObjectFactory;
@@ -100,8 +99,12 @@ class SwooleConnection extends Connection
     {
         $parsed = parse_url($this->dsn);
         isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
-        [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray($parsed,
-            ['scheme', 'host', 'port', 'user', 'pass', 'query'], null, ['mysql', 'localhost', '3306', '', '', []]);
+        [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray(
+            $parsed,
+            ['scheme', 'host', 'port', 'user', 'pass', 'query'],
+            null,
+            ['mysql', 'localhost', '3306', '', '', []]
+        );
         $client = new MySQL();
         $pool = PoolManager::getPool($this->poolKey);
         $maxRetry = $pool->getPoolConfig()->getMaxReonnect();
@@ -120,9 +123,12 @@ class SwooleConnection extends Connection
             ], $query))) {
                 $reconnectCount++;
                 if ($maxRetry > 0 && $reconnectCount >= $maxRetry) {
-                    $error = sprintf('Service connect fail error=%s host=%s port=%s',
+                    $error = sprintf(
+                        'Service connect fail error=%s host=%s port=%s',
                         socket_strerror($client->connect_errno),
-                        $host, $port);
+                        $host,
+                        $port
+                    );
                     throw new Exception($error);
                 }
                 $sleep = $pool->getPoolConfig()->getMaxWaitTime();

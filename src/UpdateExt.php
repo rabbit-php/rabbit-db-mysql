@@ -128,9 +128,16 @@ class UpdateExt
                                     foreach ($val as $c_attr => $p_attr) {
                                         $param[$c_attr] = $model->{$p_attr};
                                     }
-                                    $result[$key][] = self::updateSeveral($child_model, $param,
-                                        self::checkExist($child_model, $param, $exists,
-                                            [$child_id => $model[$val[$child_id]]]));
+                                    $result[$key][] = self::updateSeveral(
+                                        $child_model,
+                                        $param,
+                                        self::checkExist(
+                                            $child_model,
+                                            $param,
+                                            $exists,
+                                            [$child_id => $model[$val[$child_id]]]
+                                        )
+                                    );
                                 }
                             }
                         }
@@ -171,5 +178,4 @@ class UpdateExt
         }
         return null;
     }
-
 }

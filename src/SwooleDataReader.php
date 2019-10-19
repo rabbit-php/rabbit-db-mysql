@@ -3,7 +3,6 @@
 
 namespace rabbit\db\mysql;
 
-
 use rabbit\core\ObjectFactory;
 use rabbit\db\Command;
 use rabbit\db\DataReader;

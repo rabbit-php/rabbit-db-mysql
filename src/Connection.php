@@ -54,8 +54,12 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
 
         $parsed = parse_url($this->dsn);
         isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
-        [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray($parsed,
-            ['scheme', 'host', 'port', 'user', 'pass', 'query'], null, ['mysql', 'localhost', '3306', '', '', []]);
+        [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray(
+            $parsed,
+            ['scheme', 'host', 'port', 'user', 'pass', 'query'],
+            null,
+            ['mysql', 'localhost', '3306', '', '', []]
+        );
         $parts = [];
         foreach ($query as $key => $value) {
             $parts[] = "$key=$value";
