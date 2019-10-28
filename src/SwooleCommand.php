@@ -91,9 +91,9 @@ class SwooleCommand extends Command
                     return $result[0];
                 }
             }
-        } else {
-            $this->logQuery($rawSql);
         }
+
+        $this->logQuery($rawSql);
 
         try {
             $this->internalExecute($rawSql);

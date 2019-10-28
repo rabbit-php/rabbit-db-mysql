@@ -24,8 +24,6 @@ class JsonExpressionBuilder implements ExpressionBuilderInterface
 {
     use ExpressionBuilderTrait;
 
-    const PARAM_PREFIX = ':qp';
-
 
     /**
      * {@inheritdoc}
@@ -40,9 +38,8 @@ class JsonExpressionBuilder implements ExpressionBuilderInterface
             return "($sql)";
         }
 
-        $placeholder = static::PARAM_PREFIX . count($params);
-        $params[$placeholder] = JsonHelper::encode($value);
+        $params[count($params)] = JsonHelper::encode($value);
 
-        return "CAST($placeholder AS JSON)";
+        return "CAST(? AS JSON)";
     }
 }
