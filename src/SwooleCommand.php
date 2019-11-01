@@ -50,13 +50,7 @@ class SwooleCommand extends Command
             } catch (\Throwable $e) {
                 $message = $e->getMessage() . "\nFailed to prepare SQL: $sql";
                 $e = new Exception($message, $pdo->error, (int)$e->getCode(), $e);
-                if (($retryHandler = $this->db->getRetryHandler()) === null || !$retryHandler->handle(
-                    $this->db,
-                    $e,
-                    $attempt
-                )) {
-                    throw $e;
-                }
+                throw $e;
             }
         }
     }
