@@ -34,24 +34,19 @@ class SwooleCommand extends Command
             $forRead = false;
         }
 
-        $attempt = 0;
-        while (true) {
-            ++$attempt;
-            if ($forRead || $forRead === null && $this->db->getSchema()->isReadQuery($sql)) {
-                $pdo = $this->db->getSlavePdo();
-            } else {
-                $pdo = $this->db->getMasterPdo();
+        if ($forRead || $forRead === null && $this->db->getSchema()->isReadQuery($sql)) {
+            $pdo = $this->db->getSlavePdo();
+        } else {
+            $pdo = $this->db->getMasterPdo();
+        }
+        try {
+            if (false === $this->pdoStatement = $pdo->prepare($sql)) {
+                throw new Exception($pdo->error);
             }
-            try {
-                if (false === $this->pdoStatement = $pdo->prepare($sql)) {
-                    throw new Exception($pdo->error);
-                }
-                break;
-            } catch (\Throwable $e) {
-                $message = $e->getMessage() . "\nFailed to prepare SQL: $sql";
-                $e = new Exception($message, $pdo->error, (int)$e->getCode(), $e);
-                throw $e;
-            }
+        } catch (\Throwable $e) {
+            $message = $e->getMessage() . "\nFailed to prepare SQL: $sql";
+            $e = new Exception($message, $pdo->error, (int)$e->getCode(), $e);
+            throw $e;
         }
     }
 
@@ -164,13 +159,10 @@ class SwooleCommand extends Command
                 $rawSql = $rawSql ?: $this->getRawSql();
                 $e = $this->db->getSchema()->convertException($e, $rawSql);
                 $this->pdoStatement = null;
-                if (($retryHandler = $this->db->getRetryHandler()) === null || !$retryHandler->handle(
-                    $this->db,
-                    $e,
-                    $attempt
-                )) {
+                if (($retryHandler = $this->db->getRetryHandler()) === null || !$retryHandler->handle($e, $attempt)) {
                     throw $e;
                 }
+                $this->db->reconnect($attempt);
             }
         }
     }
