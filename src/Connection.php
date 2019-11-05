@@ -177,8 +177,8 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
                         $params[$n] = $v;
                     }
                 } else {
-                    $placeholders[] = ':' . $name . $i;
-                    $params[':' . $name . $i] = $value;
+                    $placeholders[] = '?';
+                    $params[] = $value;
                 }
             }
             if (!$i) {
