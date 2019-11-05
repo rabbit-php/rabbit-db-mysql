@@ -128,6 +128,11 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $array_columns = [$array_columns];
         }
         $keys = $model::primaryKey();
+
+        $schema = $model::getDb()->getSchema();
+        $tableSchema = $schema->getTableSchema($model::tableName());
+        $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
+
         foreach ($array_columns as $item) {
             $table = clone $model;
             //关联模型
@@ -176,6 +181,9 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
                     foreach ($value->params as $n => $v) {
                         $params[$n] = $v;
                     }
+                } elseif ($value instanceof JsonExpression) {
+                    $placeholders[] = '?';
+                    $params[] = JsonHelper::encode($value);
                 } else {
                     $placeholders[] = '?';
                     $params[] = $value;
