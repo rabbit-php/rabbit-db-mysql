@@ -47,12 +47,11 @@ class RetryHandler extends RetryHandlerInterface
      * @param int $count
      * @return bool
      */
-    public function handle(ConnectionInterface $db, \Throwable $e, int $count): bool
+    public function handle(\Throwable $e, int $count): bool
     {
         $isConnectionError = $this->isConnectionError($e);
         if ($isConnectionError && $count < $this->totalCount) {
             $count > 1 && \Co::sleep($this->sleep);
-            $db->reconnect($count);
             return true;
         }
         return false;
