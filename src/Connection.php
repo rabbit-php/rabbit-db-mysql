@@ -14,8 +14,10 @@ use rabbit\App;
 use rabbit\db\ConnectionTrait;
 use rabbit\db\DbContext;
 use rabbit\db\Expression;
+use rabbit\db\JsonExpression;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
+use rabbit\helper\JsonHelper;
 use rabbit\pool\ConnectionInterface;
 use rabbit\pool\PoolManager;
 use rabbit\web\HttpException;
@@ -176,6 +178,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
                 if (!$i) {
                     $updates[] = $this->quoteColumnName($name) . "=values(" . $this->quoteColumnName($name) . ")";
                 }
+                $value = isset($columnSchemas[$name]) ? $columnSchemas[$name]->dbTypecast($value) : $value;
                 if ($value instanceof Expression) {
                     $placeholders[] = $value->expression;
                     foreach ($value->params as $n => $v) {
