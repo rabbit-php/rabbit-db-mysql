@@ -202,7 +202,11 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $i++;
         }
         $sql .= " on duplicate key update " . implode(', ', $updates);
-        return $table::getDb()->createCommand($sql, $params)->execute();
+        $result = $table::getDb()->createCommand($sql, $params)->execute();
+        if (is_array($result)) {
+            return end($result);
+        }
+        return $result;
     }
 
     /**
