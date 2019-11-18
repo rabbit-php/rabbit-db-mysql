@@ -11,6 +11,7 @@ namespace rabbit\db\mysql;
 use PDO;
 use rabbit\activerecord\ActiveRecord;
 use rabbit\App;
+use rabbit\contract\InitInterface;
 use rabbit\db\ConnectionTrait;
 use rabbit\db\DbContext;
 use rabbit\db\Expression;
@@ -22,7 +23,7 @@ use rabbit\pool\ConnectionInterface;
 use rabbit\pool\PoolManager;
 use rabbit\web\HttpException;
 
-class Connection extends \rabbit\db\Connection implements ConnectionInterface
+class Connection extends \rabbit\db\Connection implements ConnectionInterface, InitInterface
 {
     use ConnectionTrait;
 
@@ -36,6 +37,10 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         $this->lastTime = time();
         $this->connectionId = uniqid();
         $this->poolKey = $poolKey;
+    }
+
+    public function init()
+    {
         $this->createConnection();
     }
 
