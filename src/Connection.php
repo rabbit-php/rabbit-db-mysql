@@ -128,6 +128,9 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface, I
      */
     public function saveSeveral(ActiveRecord $model, array $array_columns): int
     {
+        if (empty($array_columns)) {
+            return 0;
+        }
         $sql = '';
         $params = array();
         $i = 0;
@@ -223,6 +226,9 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface, I
      */
     public function deleteSeveral(ActiveRecord $table, array $array_columns): int
     {
+        if (empty($array_columns)) {
+            return 0;
+        }
         $result = false;
         $keys = $table::primaryKey();
         $condition = [];
