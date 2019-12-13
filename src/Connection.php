@@ -82,7 +82,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface, I
     {
         unset($this->pdo);
         $this->pdo = null;
-        App::warning('Reconnect DB connection: ' . $this->shortDsn, 'db');
+        App::warning("The $attempt times to Reconnect DB connection: " . $this->shortDsn, 'db');
         $this->open($attempt);
     }
 

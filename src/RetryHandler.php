@@ -65,12 +65,12 @@ class RetryHandler extends RetryHandlerInterface
     {
         if ($exception instanceof Exception) {
             $errorInfo = $exception->errorInfo;
-            if ($errorInfo[1] == 70100 || $errorInfo[1] == 2006) {
+            if (!empty($errorInfo) && ($errorInfo[1] == 70100 || $errorInfo[1] == 2006)) {
                 return true;
             } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos(
-                $exception->getMessage(),
-                'Error while sending QUERY packet. PID='
-            ) !== false) {
+                    $exception->getMessage(),
+                    'Error while sending QUERY packet. PID='
+                ) !== false) {
                 return true;
             }
         }

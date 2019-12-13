@@ -44,7 +44,7 @@ class SwooleCommand extends Command
                 throw new Exception($pdo->error);
             }
         } catch (\Throwable $e) {
-            $message = $e->getMessage() . "\nFailed to prepare SQL: $sql";
+            $message = $e->getMessage() . " Failed to prepare SQL: $sql";
             $e = new Exception($message, $pdo->error, (int)$e->getCode(), $e);
             throw $e;
         }
