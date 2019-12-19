@@ -6,6 +6,7 @@ namespace rabbit\db\mysql;
 use Co\MySQL;
 use rabbit\App;
 use rabbit\core\ObjectFactory;
+use rabbit\db\Command;
 use rabbit\db\Exception;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
@@ -13,6 +14,9 @@ use rabbit\pool\PoolManager;
 
 class SwooleConnection extends Connection
 {
+    /** @var string */
+    protected $commandClass = SwooleCommand::class;
+
     /**
      * @return bool
      */
@@ -37,21 +41,6 @@ class SwooleConnection extends Connection
         $transaction->begin($isolationLevel);
 
         return $transaction;
-    }
-
-    /**
-     * @param null $sql
-     * @param array $params
-     * @return \rabbit\db\Command
-     */
-    public function createCommand($sql = null, $params = [])
-    {
-        $driver = $this->getDriverName();
-        $config = ['class' => SwooleCommand::class, 'retryHandler' => $this->retryHandler];
-        $config['db'] = $this;
-        $config['sql'] = $sql;
-        $command = ObjectFactory::createObject($config, [], false);
-        return $command->bindValues($params);
     }
 
     /**

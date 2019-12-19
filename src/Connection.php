@@ -75,7 +75,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface, I
         $timeout = PoolManager::getPool($this->poolKey)->getTimeout();
         return new $pdoClass($dsn, $this->username, $this->password, array_merge([
             PDO::ATTR_TIMEOUT => $timeout,
-        ], $this->attributes));
+        ], $this->attributes ?? []));
     }
 
     public function reconnect(int $attempt = 0): void
