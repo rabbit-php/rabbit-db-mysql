@@ -422,7 +422,7 @@ SELECT
     `kcu`.`COLUMN_NAME` AS `column_name`,
     `tc`.`CONSTRAINT_TYPE` AS `type`,
     CASE
-        WHEN :schemaName IS NULL AND `kcu`.`REFERENCED_TABLE_SCHEMA` = DATABASE() THEN NULL
+        WHEN ? IS NULL AND `kcu`.`REFERENCED_TABLE_SCHEMA` = DATABASE() THEN NULL
         ELSE `kcu`.`REFERENCED_TABLE_SCHEMA`
     END AS `foreign_table_schema`,
     `kcu`.`REFERENCED_TABLE_NAME` AS `foreign_table_name`,
@@ -435,9 +435,9 @@ FROM
     `information_schema`.`REFERENTIAL_CONSTRAINTS` AS `rc`,
     `information_schema`.`TABLE_CONSTRAINTS` AS `tc`
 WHERE
-    `kcu`.`TABLE_SCHEMA` = COALESCE(:schemaName, DATABASE()) AND `kcu`.`CONSTRAINT_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `kcu`.`TABLE_NAME` = :tableName
-    AND `rc`.`CONSTRAINT_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `rc`.`TABLE_NAME` = :tableName AND `rc`.`CONSTRAINT_NAME` = `kcu`.`CONSTRAINT_NAME`
-    AND `tc`.`TABLE_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `tc`.`TABLE_NAME` = :tableName AND `tc`.`CONSTRAINT_NAME` = `kcu`.`CONSTRAINT_NAME` AND `tc`.`CONSTRAINT_TYPE` = 'FOREIGN KEY'
+    `kcu`.`TABLE_SCHEMA` = COALESCE(?, DATABASE()) AND `kcu`.`CONSTRAINT_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `kcu`.`TABLE_NAME` = ?
+    AND `rc`.`CONSTRAINT_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `rc`.`TABLE_NAME` = ? AND `rc`.`CONSTRAINT_NAME` = `kcu`.`CONSTRAINT_NAME`
+    AND `tc`.`TABLE_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `tc`.`TABLE_NAME` = ? AND `tc`.`CONSTRAINT_NAME` = `kcu`.`CONSTRAINT_NAME` AND `tc`.`CONSTRAINT_TYPE` = 'FOREIGN KEY'
 UNION
 SELECT
     `kcu`.`CONSTRAINT_NAME` AS `name`,
@@ -453,15 +453,21 @@ FROM
     `information_schema`.`KEY_COLUMN_USAGE` AS `kcu`,
     `information_schema`.`TABLE_CONSTRAINTS` AS `tc`
 WHERE
-    `kcu`.`TABLE_SCHEMA` = COALESCE(:schemaName, DATABASE()) AND `kcu`.`TABLE_NAME` = :tableName
-    AND `tc`.`TABLE_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `tc`.`TABLE_NAME` = :tableName AND `tc`.`CONSTRAINT_NAME` = `kcu`.`CONSTRAINT_NAME` AND `tc`.`CONSTRAINT_TYPE` IN ('PRIMARY KEY', 'UNIQUE')
+    `kcu`.`TABLE_SCHEMA` = COALESCE(?, DATABASE()) AND `kcu`.`TABLE_NAME` = ?
+    AND `tc`.`TABLE_SCHEMA` = `kcu`.`TABLE_SCHEMA` AND `tc`.`TABLE_NAME` = ? AND `tc`.`CONSTRAINT_NAME` = `kcu`.`CONSTRAINT_NAME` AND `tc`.`CONSTRAINT_TYPE` IN ('PRIMARY KEY', 'UNIQUE')
 ORDER BY `position` ASC
 SQL;
 
         $resolvedName = $this->resolveTableName($tableName);
         $constraints = $this->db->createCommand($sql, [
-            ':schemaName' => $resolvedName->schemaName,
-            ':tableName' => $resolvedName->name,
+            $resolvedName->schemaName,
+            $resolvedName->schemaName,
+            $resolvedName->name,
+            $resolvedName->name,
+            $resolvedName->name,
+            $resolvedName->schemaName,
+            $resolvedName->name,
+            $resolvedName->name,
         ])->queryAll();
         $constraints = $this->normalizePdoRowKeyCase($constraints, true);
         $constraints = ArrayHelper::index($constraints, null, ['type', 'name']);
@@ -546,14 +552,14 @@ SELECT
     `s`.`NON_UNIQUE` ^ 1 AS `index_is_unique`,
     `s`.`INDEX_NAME` = 'PRIMARY' AS `index_is_primary`
 FROM `information_schema`.`STATISTICS` AS `s`
-WHERE `s`.`TABLE_SCHEMA` = COALESCE(:schemaName, DATABASE()) AND `s`.`INDEX_SCHEMA` = `s`.`TABLE_SCHEMA` AND `s`.`TABLE_NAME` = :tableName
+WHERE `s`.`TABLE_SCHEMA` = COALESCE(?, DATABASE()) AND `s`.`INDEX_SCHEMA` = `s`.`TABLE_SCHEMA` AND `s`.`TABLE_NAME` = ?
 ORDER BY `s`.`SEQ_IN_INDEX` ASC
 SQL;
 
         $resolvedName = $this->resolveTableName($tableName);
         $indexes = $this->db->createCommand($sql, [
-            ':schemaName' => $resolvedName->schemaName,
-            ':tableName' => $resolvedName->name,
+            $resolvedName->schemaName,
+            $resolvedName->name,
         ])->queryAll();
         $indexes = $this->normalizePdoRowKeyCase($indexes, true);
         $indexes = ArrayHelper::index($indexes, null, 'name');
