@@ -5,8 +5,8 @@ namespace rabbit\db\mysql;
 
 use Co\MySQL;
 use rabbit\App;
-use rabbit\core\ObjectFactory;
-use rabbit\db\Command;
+use rabbit\core\Context;
+use rabbit\db\DbContext;
 use rabbit\db\Exception;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
@@ -16,6 +16,8 @@ class SwooleConnection extends Connection
 {
     /** @var string */
     protected $commandClass = SwooleCommand::class;
+    /** @var MySQL */
+    protected $pdo;
 
     /**
      * @return bool
@@ -120,5 +122,21 @@ class SwooleConnection extends Connection
             }
         }
         return $client;
+    }
+
+    /**
+     * @param bool $release
+     */
+    public function release($release = false): void
+    {
+        Context::set($this->poolName . '.id', $this->pdo->insert_id);
+        $transaction = $this->getTransaction();
+        if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
+            return;
+        }
+        if ($this->isAutoRelease() || $release) {
+            PoolManager::getPool($this->poolKey)->release($this);
+            DbContext::delete($this->poolName);
+        }
     }
 }

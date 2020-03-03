@@ -17,7 +17,6 @@ use rabbit\db\Expression;
 use rabbit\db\ForeignKeyConstraint;
 use rabbit\db\IndexConstraint;
 use rabbit\db\TableSchema;
-use rabbit\exception\InvalidCallException;
 use rabbit\exception\InvalidConfigException;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
@@ -122,23 +121,6 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
         }
 
         return $uniqueIndexes;
-    }
-
-    /**
-     * @param string $sequenceName
-     * @return string
-     */
-    public function getLastInsertID($sequenceName = '')
-    {
-        if ($this->db->isActive) {
-            if ($this->db->pdo instanceof MySQL) {
-                return $this->db->pdo->insert_id;
-            } else {
-                return $this->db->pdo->lastInsertId($sequenceName === '' ? null : $this->quoteTableName($sequenceName));
-            }
-        }
-
-        throw new InvalidCallException('DB Connection is not active.');
     }
 
     public function quoteValue($str)

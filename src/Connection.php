@@ -12,6 +12,7 @@ use PDO;
 use rabbit\activerecord\ActiveRecord;
 use rabbit\App;
 use rabbit\contract\InitInterface;
+use rabbit\core\Context;
 use rabbit\db\ConnectionTrait;
 use rabbit\db\DbContext;
 use rabbit\db\Expression;
@@ -109,6 +110,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface, I
      */
     public function release($release = false): void
     {
+        Context::set($this->poolName . '.id', $this->pdo->lastInsertId());
         $transaction = $this->getTransaction();
         if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
             return;
