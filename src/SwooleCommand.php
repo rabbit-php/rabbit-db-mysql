@@ -98,6 +98,7 @@ class SwooleCommand extends Command
                             $result[] = $ret;
                         }
                     }
+                    $this->db->release();
                     break;
                 case 'fetch':
                     $index = 0;
@@ -106,6 +107,7 @@ class SwooleCommand extends Command
                             $result = $ret;
                         }
                     }
+                    $this->db->release();
                     break;
                 case 'fetchColumn':
                     $index = 0;
@@ -115,6 +117,7 @@ class SwooleCommand extends Command
                         }
                         $index++;
                     }
+                    $this->db->release();
                     break;
                 default:
                     $result = new SwooleDataReader($this);
@@ -185,7 +188,7 @@ class SwooleCommand extends Command
             $n = $this->pdoStatement->affected_rows;
 
             $this->refreshTableSchema();
-
+            $this->db->release();
             return $n;
         } catch (Exception $e) {
             throw $e;
