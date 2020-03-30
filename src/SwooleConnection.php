@@ -17,7 +17,7 @@ class SwooleConnection extends Connection
     /** @var string */
     protected $commandClass = SwooleCommand::class;
     /** @var MySQL */
-    protected $pdo;
+    public $pdo;
 
     /**
      * @return bool
