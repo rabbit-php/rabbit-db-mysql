@@ -11,7 +11,6 @@ namespace rabbit\db\mysql;
 use PDO;
 use rabbit\activerecord\ActiveRecord;
 use rabbit\App;
-use rabbit\contract\InitInterface;
 use rabbit\core\Context;
 use rabbit\db\ConnectionTrait;
 use rabbit\db\DbContext;
@@ -24,7 +23,7 @@ use rabbit\pool\ConnectionInterface;
 use rabbit\pool\PoolManager;
 use rabbit\web\HttpException;
 
-class Connection extends \rabbit\db\Connection implements ConnectionInterface, InitInterface
+class Connection extends \rabbit\db\Connection implements ConnectionInterface
 {
     use ConnectionTrait;
 
@@ -38,11 +37,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface, I
         $this->lastTime = time();
         $this->connectionId = uniqid();
         $this->poolKey = $poolKey;
-    }
-
-    public function init()
-    {
-        $this->createConnection();
     }
 
     public function createConnection(): void
@@ -110,7 +104,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface, I
      */
     public function release($release = false): void
     {
-        Context::set($this->poolName . '.id', $this->pdo->lastInsertId());
+        $this->pdo && Context::set($this->poolName . '.id', $this->pdo->lastInsertId());
         $transaction = $this->getTransaction();
         if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
             return;
