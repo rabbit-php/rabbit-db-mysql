@@ -189,7 +189,7 @@ class SwooleCommand extends Command
 
             $this->refreshTableSchema();
             $this->db->release();
-            return ($result === [] || $result === null) ? false : $result;
+            return ($n === [] || $n === null) ? false : $n;
         } catch (Exception $e) {
             throw $e;
         }
