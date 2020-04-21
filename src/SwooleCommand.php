@@ -130,7 +130,7 @@ class SwooleCommand extends Command
             $cache->set($cacheKey, serialize([$result]), $info[1]) && App::debug('Saved query result in cache', 'db');
         }
 
-        return $result;
+        return ($result === [] || $result === null) ? false : $result;
     }
 
     /**
@@ -189,7 +189,7 @@ class SwooleCommand extends Command
 
             $this->refreshTableSchema();
             $this->db->release();
-            return $n;
+            return ($result === [] || $result === null) ? false : $result;
         } catch (Exception $e) {
             throw $e;
         }
