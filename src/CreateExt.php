@@ -22,22 +22,22 @@ class CreateExt
     public static function create(
         ActiveRecord $model,
         array $body,
-        bool $hasRealation = false
-    ): array {
-        if (ArrayHelper::isIndexed($body)) {
-            if ($hasRealation) {
-                $result = [];
-                foreach ($body as $params) {
-                    $res = self::createSeveral(clone $model, $params);
-                    $result[] = $res;
-                }
-            } else {
-                $result = $model::getDb()->saveSeveral($model, $body);
+        bool $batch = true
+    ): array
+    {
+        if (!ArrayHelper::isIndexed($body)) {
+            $body = [$body];
+        }
+        $pks = $model::primaryKey();
+        if (!$batch || !isset($body[0][current($pks)])) {
+            $result = [];
+            foreach ($body as $params) {
+                $res = self::createSeveral(clone $model, $params);
+                $result[] = $res;
             }
         } else {
-            $result = self::createSeveral($model, $body);
+            $result = $model::getDb()->saveSeveral($model, $body);
         }
-
         return is_array($result) ? $result : [$result];
     }
 
@@ -70,25 +70,21 @@ class CreateExt
     {
         $result = [];
         //关联模型
-        if (isset($model->realation)) {
-            foreach ($model->realation as $key => $val) {
-                if (isset($body[$key])) {
-                    $child = $model->getRelation($key)->modelClass;
-                    if ($body[$key]) {
-                        if (ArrayHelper::isAssociative($body[$key])) {
-                            $body[$key] = [$body[$key]];
-                        }
-                        foreach ($body[$key] as $params) {
-                            if ($val) {
-                                foreach ($val as $c_attr => $p_attr) {
-                                    $params[$c_attr] = $model->{$p_attr};
-                                }
-                            }
-                            $child_model = new $child();
-                            $res = self::createSeveral($child_model, $params);
-                            $result[$key][] = $res;
+        foreach ($model->getRelations() as $child => $val) {
+            $key = strtolower(end(explode("\\", $child)));
+            if (isset($body[$key])) {
+                if (ArrayHelper::isAssociative($body[$key])) {
+                    $body[$key] = [$body[$key]];
+                }
+                foreach ($body[$key] as $params) {
+                    if ($val) {
+                        foreach ($val as $c_attr => $p_attr) {
+                            $params[$c_attr] = $model->{$p_attr};
                         }
                     }
+                    $child_model = new $child();
+                    $res = self::createSeveral($child_model, $params);
+                    $result[$key][] = $res;
                 }
             }
         }

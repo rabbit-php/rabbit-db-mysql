@@ -127,7 +127,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             return 0;
         }
         $sql = '';
-        $params = array();
+        $params = [];
         $i = 0;
         if (ArrayHelper::isAssociative($array_columns)) {
             $array_columns = [$array_columns];
@@ -141,24 +141,20 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         foreach ($array_columns as $item) {
             $table = clone $model;
             //关联模型
-            if (isset($table->realation)) {
-                foreach ($table->realation as $key => $val) {
-                    if (isset($item[$key])) {
-                        $child = $table->getRelation($key)->modelClass;
-                        $child_model = new $child();
-                        if ($item[$key]) {
-                            if (!isset($item[$key][0])) {
-                                $item[$key] = [$item[$key]];
-                            }
-                            foreach ($val as $c_attr => $p_attr) {
-                                foreach ($item[$key] as $index => $params) {
-                                    $item[$key][$index][$c_attr] = $table->{$p_attr};
-                                }
-                            }
-                            if ($this->updateSeveral($child_model, $item[$key]) === false) {
-                                return false;
-                            }
+            foreach ($table->getRelations() as $child => $val) {
+                $key = strtolower(end(explode("\\", $child)));
+                if (isset($item[$key])) {
+                    $child_model = new $child();
+                    if (!isset($item[$key][0])) {
+                        $item[$key] = [$item[$key]];
+                    }
+                    foreach ($val as $c_attr => $p_attr) {
+                        foreach ($item[$key] as $index => &$param) {
+                            $param[$c_attr] = $table->{$p_attr};
                         }
+                    }
+                    if ($this->saveSeveral($child_model, $item[$key]) === false) {
+                        return false;
                     }
                 }
             }
@@ -233,16 +229,12 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         foreach ($array_columns as $item) {
             $table->load($item, '');
             $table->isNewRecord = false;
-            if (isset($table->realation)) {
-                foreach ($table->realation as $key => $val) {
-                    if (isset($item[$key])) {
-                        $child = $table->getRelation($key)->modelClass;
-                        $child_model = new $child();
-                        if ($item[$key]) {
-                            if ($this->deleteSeveral($child_model, $item[$key]) === false) {
-                                return false;
-                            }
-                        }
+            foreach ($table->getRelations() as $child => $val) {
+                $key = strtolower(end(explode("\\", $child)));
+                if (isset($item[$key])) {
+                    $child_model = new $child();
+                    if ($this->deleteSeveral($child_model, $item[$key]) === false) {
+                        return false;
                     }
                 }
             }
