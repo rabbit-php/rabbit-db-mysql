@@ -5,6 +5,7 @@ namespace rabbit\db\mysql;
 use rabbit\activerecord\ActiveRecord;
 use rabbit\db\DBHelper;
 use rabbit\db\Exception;
+use rabbit\db\Query;
 use rabbit\helper\ArrayHelper;
 
 /**
@@ -19,14 +20,15 @@ class DeleteExt
      * @return int
      * @throws Exception
      */
-    public static function delete(ActiveRecord $model, array $body): int
+    public static function delete(ActiveRecord $model, array $body, bool $useOrm = false): int
     {
         if (ArrayHelper::isIndexed($body)) {
             $result = $model::getDb()->deleteSeveral($model, $body);
         } else {
-            $result = $model->deleteAll(DBHelper::Search((new Query()), $body)->where);
+            $result = $useOrm ? $model::getDb()->createCommandExt(['delete', [$model::tableName(), $body]])->execute() :
+                $model->deleteAll(DBHelper::Search((new Query()), ['where' => $body])->where);
         }
-        if ($result === false || $result === []) {
+        if ($result === false) {
             throw new Exception('Failed to delete the object for unknown reason.');
         }
         return $result;

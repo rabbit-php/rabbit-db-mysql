@@ -140,9 +140,11 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
 
         foreach ($array_columns as $item) {
             $table = clone $model;
+            $table->load($item, '');
             //关联模型
             foreach ($table->getRelations() as $child => $val) {
-                $key = strtolower(end(explode("\\", $child)));
+                $key = explode("\\", $child);
+                $key = strtolower(end($key));
                 if (isset($item[$key])) {
                     $child_model = new $child();
                     if (!isset($item[$key][0])) {
@@ -160,7 +162,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             }
             $names = array();
             $placeholders = array();
-            $table->load($item, '');
             $table->isNewRecord = false;
             if (!$table->validate()) {
                 throw new HttpException(implode(BREAKS, $table->getFirstErrors()));

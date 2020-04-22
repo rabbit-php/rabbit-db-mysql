@@ -21,11 +21,11 @@ class UpdateExt
      * @throws Exception
      * @throws \rabbit\exception\InvalidConfigException
      */
-    public static function update(ActiveRecord $model, array $body, bool $batch = true): array
+    public static function update(ActiveRecord $model, array $body, bool $useOrm = false, bool $batch = true): array
     {
         if (isset($body['condition']) && $body['condition']) {
-            $condition = DBHelper::Search((new Query()), $body['condition'])->where;
-            $result = $model->updateAll($body['edit'], $condition);
+            $result = $useOrm ? $model::getDb()->createCommandExt(['update', [$body['edit'], $body['condition']]])->execute() :
+                $model->updateAll($body['edit'], DBHelper::Search((new Query()), $body['condition'])->where);
             if ($result === false) {
                 throw new Exception('Failed to update the object for unknown reason.');
             }
@@ -105,7 +105,8 @@ class UpdateExt
         $result = [];
         //关联模型
         foreach ($model->getRelations() as $child => $val) {
-            $key = strtolower(end(explode("\\", $child)));
+            $key = explode("\\", $child);
+            $key = strtolower(end($key));
             if (isset($body[$key])) {
                 if (isset($params['edit']) && $params['edit']) {
                     $child_model = new $child();
