@@ -5,6 +5,7 @@ namespace rabbit\db\mysql;
 
 use DI\DependencyException;
 use DI\NotFoundException;
+use Psr\SimpleCache\CacheInterface;
 use rabbit\db\Connection;
 use rabbit\db\Exception;
 
@@ -23,9 +24,9 @@ class Orm
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public static function search(Connection $connection, string $table, array $body = [], string $method = 'queryAll')
+    public static function search(Connection $connection, string $table, array $body = [], string $method = 'queryAll', int $duration = -1, ?CacheInterface $cache = null)
     {
-        return $connection->createCommandExt(['select', array_merge([$table], $body)])->$method();
+        return $connection->createCommandExt(['select', array_merge([$table], $body)])->cache($duration, $cache)->$method();
     }
 
     /**

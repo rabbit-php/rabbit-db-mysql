@@ -129,7 +129,7 @@ class SwooleConnection extends Connection
      */
     public function release($release = false): void
     {
-        Context::set($this->poolName . '.id', $this->pdo->insert_id);
+        $this->pdo && $this->pdo->insert_id > 0 && Context::set($this->poolName . '.id', $this->pdo->insert_id);
         $transaction = $this->getTransaction();
         if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
             return;
