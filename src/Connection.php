@@ -166,14 +166,15 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             if (!$table->validate()) {
                 throw new HttpException(implode(BREAKS, $table->getFirstErrors()));
             }
+            $tableArray = $table->toArray();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (isset($item[$key])) {
-                        $table[$key] = $item[$key];
+                    if (isset($item[$key]) && (!isset($item[$key]) || empty($tableArray[$key]))) {
+                        $tableArray[$key] = $item[$key];
                     }
                 }
             }
-            foreach ($table->toArray() as $name => $value) {
+            foreach ($tableArray as $name => $value) {
                 $names[] = $this->quoteColumnName($name);
                 if (!$i) {
                     $updates[] = $this->quoteColumnName($name) . "=values(" . $this->quoteColumnName($name) . ")";
