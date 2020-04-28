@@ -3,7 +3,6 @@
 namespace rabbit\db\mysql;
 
 use Psr\SimpleCache\CacheInterface;
-use rabbit\App;
 use rabbit\db\Command;
 use rabbit\db\DataReader;
 use rabbit\db\Exception;
@@ -91,7 +90,7 @@ class SwooleCommand extends Command
                     while ($ret = $this->pdoStatement->fetch()) {
                         if ($fetchMode === \PDO::FETCH_COLUMN) {
                             foreach ($ret as $item) {
-                                $result[] = current($item);
+                                $result[] = is_array($item) ? current($item) : $item;
                             }
                         } else {
                             $result[] = $ret;
