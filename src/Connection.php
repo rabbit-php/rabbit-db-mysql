@@ -169,7 +169,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $tableArray = $table->toArray();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (isset($item[$key]) && (!isset($item[$key]) || empty($tableArray[$key]))) {
+                    if (isset($item[$key]) && (!isset($item[$key]) || $tableArray[$key] === null)) {
                         $tableArray[$key] = $item[$key];
                     }
                 }
