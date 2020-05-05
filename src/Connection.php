@@ -175,8 +175,8 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
                 }
             }
             foreach ($tableArray as $name => $value) {
-                $names[] = $this->quoteColumnName($name);
                 if (!$i) {
+                    $names[] = $this->quoteColumnName($name);
                     $updates[] = $this->quoteColumnName($name) . "=values(" . $this->quoteColumnName($name) . ")";
                 }
                 $value = isset($columnSchemas[$name]) ? $columnSchemas[$name]->dbTypecast($value) : $value;
