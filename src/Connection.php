@@ -12,7 +12,6 @@ use PDO;
 use rabbit\activerecord\ActiveRecord;
 use rabbit\App;
 use rabbit\core\Context;
-use rabbit\db\ConnectionTrait;
 use rabbit\db\DbContext;
 use rabbit\db\Expression;
 use rabbit\db\JsonExpression;
@@ -20,13 +19,10 @@ use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
 use rabbit\helper\JsonHelper;
 use rabbit\pool\ConnectionInterface;
-use rabbit\pool\PoolManager;
 use rabbit\web\HttpException;
 
 class Connection extends \rabbit\db\Connection implements ConnectionInterface
 {
-    use ConnectionTrait;
-
     /**
      * Connection constructor.
      * @param array|null $dsn
@@ -34,20 +30,14 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     public function __construct(string $dsn, string $poolKey)
     {
         parent::__construct($dsn);
-        $this->lastTime = time();
-        $this->connectionId = uniqid();
         $this->poolKey = $poolKey;
-    }
-
-    public function createConnection(): void
-    {
-        $this->open();
+        $this->driver = 'mysql';
     }
 
     /**
      * @return mixed|\PDO
      */
-    protected function createPdoInstance()
+    public function createPdoInstance()
     {
         $pdoClass = $this->pdoClass;
         if ($pdoClass === null) {
@@ -67,7 +57,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $parts[] = "$key=$value";
         }
         $dsn = "$driver:host=$host;port=$port;" . implode(';', $parts);
-        $timeout = PoolManager::getPool($this->poolKey)->getTimeout();
+        $timeout = $this->getPool()->getTimeout();
         return new $pdoClass($dsn, $this->username, $this->password, array_merge([
             PDO::ATTR_TIMEOUT => $timeout,
         ], $this->attributes ?? []));
@@ -75,7 +65,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
 
     public function reconnect(int $attempt = 0): void
     {
-        $this->pdo = null;
         App::warning("The $attempt times to Reconnect DB connection: " . $this->shortDsn, 'db');
         $this->open($attempt);
     }
@@ -96,22 +85,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     public function receive(float $timeout = -1)
     {
         throw new NotSupportedException('can not call ' . __METHOD__);
-    }
-
-    /**
-     * @param bool $release
-     */
-    public function release($release = false): void
-    {
-        $this->pdo && Context::set($this->poolName . '.id', $this->pdo->lastInsertId());
-        $transaction = $this->getTransaction();
-        if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
-            return;
-        }
-        if ($this->isAutoRelease() || $release) {
-            PoolManager::getPool($this->poolKey)->release($this);
-            DbContext::delete($this->poolName);
-        }
     }
 
     /**

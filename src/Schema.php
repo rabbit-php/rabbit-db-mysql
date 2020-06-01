@@ -230,7 +230,7 @@ class Schema extends \rabbit\db\Schema implements ConstraintFinderInterface
             throw $e;
         }
         foreach ($columns as $info) {
-            if ($this->db->slavePdo instanceof MySQL || ($this->db->slavePdo->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER)) {
+            if ($this->db->getSlavePdo() instanceof MySQL || ($this->db->getSlavePdo()->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER)) {
                 $info = array_change_key_case($info, CASE_LOWER);
             }
             $column = $this->loadColumnSchema($info);

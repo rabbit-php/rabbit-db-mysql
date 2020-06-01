@@ -4,27 +4,25 @@
 namespace rabbit\db\mysql;
 
 use Co\MySQL;
-use rabbit\App;
 use rabbit\core\Context;
-use rabbit\db\DbContext;
 use rabbit\db\Exception;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
-use rabbit\pool\PoolManager;
 
 class SwooleConnection extends Connection
 {
     /** @var string */
     protected $commandClass = SwooleCommand::class;
-    /** @var MySQL */
-    public $pdo;
 
     /**
-     * @return bool
+     * SwooleConnection constructor.
+     * @param string $dsn
+     * @param string $poolKey
      */
-    public function getIsActive()
+    public function __construct(string $dsn, string $poolKey)
     {
-        return $this->pdo !== null && $this->pdo->connected;
+        parent::__construct($dsn, $poolKey);
+        $this->driver = 'swoole';
     }
 
     /**
@@ -46,40 +44,10 @@ class SwooleConnection extends Connection
     }
 
     /**
-     * @param int $attempt
-     * @throws Exception
-     * @throws NotSupportedException
-     */
-    public function open(int $attempt = 0)
-    {
-        if ($this->getIsActive()) {
-            return;
-        }
-
-        if (!empty($this->masters)) {
-            $db = $this->getMaster();
-            if ($db !== null) {
-                $this->pdo = $db->pdo;
-                return;
-            }
-
-            throw new \InvalidArgumentException('None of the master DB servers is available.');
-        }
-
-        if (empty($this->dsn)) {
-            throw new \InvalidArgumentException('Connection::dsn cannot be empty.');
-        }
-
-        $token = 'Opening DB connection: ' . $this->shortDsn;
-        App::info($token, "db");
-        $this->pdo = $this->createPdoInstance();
-    }
-
-    /**
      * @return MySQL|\PDO
      * @throws Exception
      */
-    protected function createPdoInstance()
+    public function createPdoInstance()
     {
         $parsed = parse_url($this->dsn);
         isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
@@ -90,7 +58,7 @@ class SwooleConnection extends Connection
             ['mysql', 'localhost', '3306', '', '', []]
         );
         $client = new MySQL();
-        $pool = PoolManager::getPool($this->poolKey);
+        $pool = $this->getPool();
         $maxRetry = $pool->getPoolConfig()->getMaxReonnect();
         $reconnectCount = 0;
         $database = ArrayHelper::remove($query, 'dbname');
@@ -125,18 +93,10 @@ class SwooleConnection extends Connection
     }
 
     /**
-     * @param bool $release
+     * @param $conn
      */
-    public function release($release = false): void
+    protected function setInsertId($conn): void
     {
-        $this->pdo && $this->pdo->insert_id > 0 && Context::set($this->poolName . '.id', $this->pdo->insert_id);
-        $transaction = $this->getTransaction();
-        if (!empty($transaction) && $transaction->getIsActive()) {//事务里面不释放连接
-            return;
-        }
-        if ($this->isAutoRelease() || $release) {
-            PoolManager::getPool($this->poolKey)->release($this);
-            DbContext::delete($this->poolName);
-        }
+        $conn->insert_id > 0 && Context::set($this->poolName . '.id', $conn->lastInsertId());
     }
 }
