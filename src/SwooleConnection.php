@@ -83,7 +83,7 @@ class SwooleConnection extends Connection
                     );
                     throw new Exception($error);
                 }
-                $sleep = $pool->getPoolConfig()->getMaxWaitTime();
+                $sleep = $pool->getPoolConfig()->getMaxWait();
                 \Co::sleep($sleep ? $sleep : 1);
             } else {
                 break;
