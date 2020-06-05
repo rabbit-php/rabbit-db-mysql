@@ -1,10 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2019/1/23
- * Time: 16:16
- */
+declare(strict_types=1);
 
 namespace rabbit\db\mysql;
 
@@ -21,6 +16,10 @@ use rabbit\helper\JsonHelper;
 use rabbit\pool\ConnectionInterface;
 use rabbit\web\HttpException;
 
+/**
+ * Class Connection
+ * @package rabbit\db\mysql
+ */
 class Connection extends \rabbit\db\Connection implements ConnectionInterface
 {
     /**

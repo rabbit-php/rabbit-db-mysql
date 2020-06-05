@@ -1,18 +1,23 @@
 <?php
-
+declare(strict_types=1);
 
 namespace rabbit\db\mysql;
 
 use Co\MySQL;
 use rabbit\core\Context;
 use rabbit\db\Exception;
-use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
 
+/**
+ * Class SwooleConnection
+ * @package rabbit\db\mysql
+ */
 class SwooleConnection extends Connection
 {
     /** @var string */
     protected $commandClass = SwooleCommand::class;
+    /** @var string |SwooleTransaction */
+    protected $transactionClass = SwooleTransaction::class;
 
     /**
      * SwooleConnection constructor.
@@ -23,24 +28,6 @@ class SwooleConnection extends Connection
     {
         parent::__construct($dsn, $poolKey);
         $this->driver = 'swoole';
-    }
-
-    /**
-     * @param null $isolationLevel
-     * @return SwooleTransaction|\rabbit\db\Transaction|null
-     * @throws Exception
-     * @throws NotSupportedException
-     */
-    public function beginTransaction($isolationLevel = null)
-    {
-        $this->open();
-
-        if (($transaction = $this->getTransaction()) === null) {
-            $transaction = $this->_transaction = new SwooleTransaction($this);
-        }
-        $transaction->begin($isolationLevel);
-
-        return $transaction;
     }
 
     /**
