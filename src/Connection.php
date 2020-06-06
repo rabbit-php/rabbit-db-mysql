@@ -6,7 +6,6 @@ namespace rabbit\db\mysql;
 use PDO;
 use rabbit\activerecord\ActiveRecord;
 use rabbit\App;
-use rabbit\core\Context;
 use rabbit\db\DbContext;
 use rabbit\db\Expression;
 use rabbit\db\JsonExpression;
@@ -60,12 +59,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         return new $pdoClass($dsn, $this->username, $this->password, array_merge([
             PDO::ATTR_TIMEOUT => $timeout,
         ], $this->attributes ?? []));
-    }
-
-    public function reconnect(int $attempt = 0): void
-    {
-        App::warning("The $attempt times to Reconnect DB connection: " . $this->shortDsn, 'db');
-        $this->open($attempt);
     }
 
     /**
