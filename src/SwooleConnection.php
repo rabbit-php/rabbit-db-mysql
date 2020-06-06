@@ -84,6 +84,6 @@ class SwooleConnection extends Connection
      */
     protected function setInsertId($conn): void
     {
-        $conn->insert_id > 0 && Context::set($this->poolName . '.id', $conn->lastInsertId());
+        $conn->insert_id > 0 && Context::set($this->poolName . '.id', $conn->insert_id);
     }
 }
