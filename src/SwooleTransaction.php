@@ -29,8 +29,8 @@ class SwooleTransaction extends Transaction
                 $this->db->getSchema()->setTransactionIsolationLevel($isolationLevel);
             }
             App::debug('Begin transaction' . ($isolationLevel ? ' with isolation level ' . $isolationLevel : ''), "db");
-            $this->_level = 1;
             $this->db->getConn()->begin();
+            $this->_level = 1;
             return;
         }
 
