@@ -180,8 +180,14 @@ class SwooleCommand extends Command
 
         try {
             $this->internalExecute($rawSql);
-            $n = $this->pdoStatement->affected_rows;
 
+            $n = [];
+            while ($ret = $this->pdoStatement->fetch()) {
+                $n[] = $ret;
+            }
+            if (empty($n)) {
+                $n = $this->pdoStatement->affected_rows;
+            }
             $this->refreshTableSchema();
             return ($n === [] || $n === null) ? false : $n;
         } catch (Exception $e) {
