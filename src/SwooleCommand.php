@@ -72,10 +72,12 @@ class SwooleCommand extends Command
                     $this->db->dsn,
                     $rawSql ?: $rawSql = $this->getRawSql(),
                 ]);
-                $result = unserialize($cache->get($cacheKey));
-                if (is_array($result) && isset($result[0])) {
-                    $this->logQuery($rawSql . '; [Query result served from cache]');
-                    return $result[0];
+                if (false !== $ret = $cache->get($cacheKey)) {
+                    $result = unserialize($ret);
+                    if (is_array($result) && isset($result[0])) {
+                        $this->logQuery($rawSql . '; [Query result served from cache]');
+                        return $result[0];
+                    }
                 }
             }
         }
@@ -122,7 +124,7 @@ class SwooleCommand extends Command
         }
 
         if (isset($cache, $cacheKey, $info)) {
-            $cache->set($cacheKey, serialize([$result]), $info[1]) && $this->logQuery('Saved query result in cache', 'db');
+            !$cache->has($cacheKey) && $cache->set($cacheKey, serialize([$result]), $info[1]) && $this->logQuery('Saved query result in cache', 'db');
         }
 
         return ($result === [] || $result === null) ? false : $result;
