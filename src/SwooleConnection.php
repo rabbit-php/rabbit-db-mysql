@@ -5,6 +5,7 @@ namespace rabbit\db\mysql;
 
 use Co\MySQL;
 use rabbit\core\Context;
+use rabbit\db\DbContext;
 use rabbit\db\Exception;
 use rabbit\helper\ArrayHelper;
 
@@ -82,8 +83,11 @@ class SwooleConnection extends Connection
     /**
      * @param $conn
      */
-    protected function setInsertId($conn): void
+    public function setInsertId($conn = null): void
     {
-        $conn->insert_id > 0 && Context::set($this->poolName . '.id', $conn->insert_id);
+        $conn = $conn ?? DbContext::get($this->poolName, $this->driver);
+        if ($conn !== null) {
+            $conn->insert_id > 0 && Context::set($this->poolName . '.id', $conn->insert_id);
+        }
     }
 }

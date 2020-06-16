@@ -190,6 +190,7 @@ class SwooleCommand extends Command
             if (empty($n)) {
                 $n = $this->pdoStatement->affected_rows;
             }
+            $this->db->setInsertId();
             $this->refreshTableSchema();
             return ($n === [] || $n === null) ? false : $n;
         } catch (Exception $e) {
