@@ -37,7 +37,7 @@ class SwooleConnection extends Connection
      */
     public function createPdoInstance()
     {
-        $parsed = parse_url($this->dsn);
+        $parsed = $this->parseDsn;
         isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
         [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray(
             $parsed,

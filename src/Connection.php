@@ -42,7 +42,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $pdoClass = 'PDO';
         }
 
-        $parsed = parse_url($this->dsn);
+        $parsed = $this->parseDsn;
         isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
         [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray(
             $parsed,
@@ -59,24 +59,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         return new $pdoClass($dsn, $this->username, $this->password, array_merge([
             PDO::ATTR_TIMEOUT => $timeout,
         ], $this->attributes ?? []));
-    }
-
-    /**
-     * @return bool
-     */
-    public function check(): bool
-    {
-        return $this->getIsActive();
-    }
-
-    /**
-     * @param float $timeout
-     * @return mixed|void
-     * @throws NotSupportedException
-     */
-    public function receive(float $timeout = -1)
-    {
-        throw new NotSupportedException('can not call ' . __METHOD__);
     }
 
     /**
