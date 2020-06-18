@@ -47,7 +47,7 @@ class SwooleConnection extends Connection
         );
         $client = new MySQL();
         $pool = $this->getPool();
-        $maxRetry = $pool->getPoolConfig()->getMaxReonnect();
+        $maxRetry = $pool->getPoolConfig()->getMaxRetry();
         $reconnectCount = 0;
         $database = ArrayHelper::remove($query, 'dbname');
         while (true) {
