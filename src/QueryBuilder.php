@@ -11,6 +11,7 @@ namespace Rabbit\DB\Mysql;
 use InvalidArgumentException;
 use Rabbit\Base\Exception\NotSupportedException;
 use Rabbit\DB\Exception;
+use Rabbit\DB\JsonExpression;
 use Rabbit\DB\Query;
 
 /**
@@ -19,7 +20,7 @@ use Rabbit\DB\Query;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-class QueryBuilder extends \rabbit\db\QueryBuilder
+class QueryBuilder extends \Rabbit\DB\QueryBuilder
 {
     /**
      * @var array mapping from abstract column types (keys) to physical column types (values).
@@ -193,7 +194,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * {@inheritdoc}
      */
-    public function buildLimit(int $limit, int $offset): string
+    public function buildLimit(?int $limit, ?int $offset): string
     {
         $sql = '';
         if ($this->hasLimit($limit)) {
@@ -345,7 +346,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     protected function defaultExpressionBuilders(): array
     {
         return array_merge(parent::defaultExpressionBuilders(), [
-            \rabbit\db\JsonExpression::class => JsonExpressionBuilder::class,
+            JsonExpression::class => JsonExpressionBuilder::class,
         ]);
     }
 

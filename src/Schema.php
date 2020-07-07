@@ -35,7 +35,7 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
     /**
      * {@inheritdoc}
      */
-    public string $columnSchemaClass = 'rabbit\db\mysql\ColumnSchema';
+    public string $columnSchemaClass = ColumnSchema::class;
     /**
      * @var array mapping from physical column types (keys) to abstract column types (values)
      */
