@@ -42,7 +42,6 @@ class SwooleConnection extends Connection
         [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray(
             $parsed,
             ['scheme', 'host', 'port', 'user', 'pass', 'query'],
-            null,
             ['mysql', 'localhost', '3306', '', '', []]
         );
         $client = new MySQL();
