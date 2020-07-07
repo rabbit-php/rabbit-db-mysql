@@ -1,11 +1,12 @@
 <?php
+declare(strict_types=1);
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
-use rabbit\activerecord\ActiveRecord;
-use rabbit\db\DBHelper;
-use rabbit\db\Exception;
-use rabbit\helper\ArrayHelper;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\DB\DBHelper;
+use Rabbit\DB\Exception;
+use Rabbit\DB\Query;
 
 /**
  * Class UpdateExt
@@ -14,14 +15,14 @@ use rabbit\helper\ArrayHelper;
 class UpdateExt
 {
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
-     * @param bool $hasRealation
+     * @param bool $useOrm
+     * @param bool $batch
      * @return array
      * @throws Exception
-     * @throws \rabbit\exception\InvalidConfigException
      */
-    public static function update(ActiveRecord $model, array $body, bool $useOrm = false, bool $batch = true): array
+    public static function update($model, array $body, bool $useOrm = false, bool $batch = true): array
     {
         if (isset($body['condition']) && $body['condition']) {
             $result = $useOrm ? $model::getDb()->createCommandExt(['update', [$body['edit'], $body['condition']]])->execute() :
@@ -48,13 +49,12 @@ class UpdateExt
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
-     * @param array $andCondition
+     * @param array $condition
      * @return array
-     * @throws \rabbit\exception\InvalidConfigException
      */
-    private static function findExists(ActiveRecord $model, array $body, array $condition = []): array
+    private static function findExists($model, array $body, array $condition = []): array
     {
         $keys = $model::primaryKey();
         if (ArrayHelper::isAssociative($body)) {
@@ -68,20 +68,19 @@ class UpdateExt
             }
         }
         if ($condition !== [] && count($keys) === count($condition)) {
-            $exits = $model::find()->where($condition)->asArray()->all();
-            return $exits;
+            return $model::find()->where($condition)->asArray()->all();
         }
         return [];
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
      * @param array|null $exist
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
-    public static function updateSeveral(ActiveRecord $model, array $body, ?array $exist): array
+    public static function updateSeveral($model, array $body, ?array $exist): array
     {
         $model->setOldAttributes($exist);
         $model->load($body, '');
@@ -94,13 +93,12 @@ class UpdateExt
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
      * @return array
      * @throws Exception
-     * @throws \rabbit\exception\InvalidConfigException
      */
-    public static function saveRealation(ActiveRecord $model, array $body): array
+    public static function saveRealation($model, array $body): array
     {
         $result = [];
         //关联模型
@@ -108,8 +106,8 @@ class UpdateExt
             $key = explode("\\", $child);
             $key = strtolower(end($key));
             if (isset($body[$key])) {
+                $child_model = new $child();
                 if (isset($params['edit']) && $params['edit']) {
-                    $child_model = new $child();
                     $result[$key] = self::update($child_model, $params);
                 } else {
                     if (ArrayHelper::isAssociative($body[$key])) {
@@ -121,7 +119,6 @@ class UpdateExt
                     $exists = self::findExists($child_model, $params);
                     foreach ($params as $param) {
                         if ($val) {
-                            /** @var ActiveRecord $child_model */
                             $child_model = new $child();
                             $child_id = key($val);
                             foreach ($val as $c_attr => $p_attr) {
@@ -150,13 +147,12 @@ class UpdateExt
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
      * @param array $exists
      * @return array|null
-     * @throws \rabbit\exception\InvalidConfigException
      */
-    private static function checkExist(ActiveRecord $model, array $body, array $exists): ?array
+    private static function checkExist($model, array $body, array $exists): ?array
     {
         if (!$exists) {
             return null;

@@ -1,18 +1,20 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
-use rabbit\db\ExpressionBuilderInterface;
-use rabbit\db\ExpressionBuilderTrait;
-use rabbit\db\ExpressionInterface;
-use rabbit\db\JsonExpression;
-use rabbit\db\Query;
-use rabbit\helper\JsonHelper;
+use Rabbit\Base\Helper\JsonHelper;
+use Rabbit\DB\Exception;
+use Rabbit\DB\ExpressionBuilderInterface;
+use Rabbit\DB\ExpressionBuilderTrait;
+use Rabbit\DB\ExpressionInterface;
+use Rabbit\DB\JsonExpression;
+use Rabbit\DB\Query;
 
 /**
  * Class JsonExpressionBuilder builds [[JsonExpression]] for MySQL DBMS.
@@ -28,8 +30,9 @@ class JsonExpressionBuilder implements ExpressionBuilderInterface
     /**
      * {@inheritdoc}
      * @param JsonExpression|ExpressionInterface $expression the expression to be built
+     * @throws Exception
      */
-    public function build(ExpressionInterface $expression, array &$params = [])
+    public function build(ExpressionInterface $expression, array &$params = []): string
     {
         $value = $expression->getValue();
 

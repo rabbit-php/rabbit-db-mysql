@@ -1,17 +1,17 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
 use InvalidArgumentException;
-use rabbit\db\Exception;
-use rabbit\db\Expression;
-use rabbit\db\Query;
-use rabbit\exception\NotSupportedException;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\DB\Exception;
+use Rabbit\DB\Query;
 
 /**
  * QueryBuilder is the query builder for MySQL databases.
@@ -24,7 +24,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * @var array mapping from abstract column types (keys) to physical column types (values).
      */
-    public $typeMap = [
+    public array $typeMap = [
         Schema::TYPE_PK => 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
         Schema::TYPE_UPK => 'int(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY',
         Schema::TYPE_BIGPK => 'bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY',
@@ -57,7 +57,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * @return string the SQL statement for renaming a DB column.
      * @throws Exception
      */
-    public function renameColumn($table, $oldName, $newName)
+    public function renameColumn(string $table, string $oldName, string $newName): string
     {
         $quotedTable = $this->db->quoteTableName($table);
         $row = $this->db->createCommand('SHOW CREATE TABLE ' . $quotedTable)->queryOne();
@@ -90,7 +90,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * {@inheritdoc}
      * @see https://bugs.mysql.com/bug.php?id=48875
      */
-    public function createIndex($name, $table, $columns, $unique = false)
+    public function createIndex(string $name, string $table, $columns, bool $unique = false): string
     {
         return 'ALTER TABLE '
             . $this->db->quoteTableName($table)
@@ -105,7 +105,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * @param string $table the table whose foreign is to be dropped. The name will be properly quoted by the method.
      * @return string the SQL statement for dropping a foreign key constraint.
      */
-    public function dropForeignKey($name, $table)
+    public function dropForeignKey(string $name, string $table): string
     {
         return 'ALTER TABLE ' . $this->db->quoteTableName($table)
             . ' DROP FOREIGN KEY ' . $this->db->quoteColumnName($name);
@@ -117,7 +117,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * @param string $table the table that the primary key constraint will be removed from.
      * @return string the SQL statement for removing a primary key constraint from an existing table.
      */
-    public function dropPrimaryKey($name, $table)
+    public function dropPrimaryKey(string $name, string $table): string
     {
         return 'ALTER TABLE ' . $this->db->quoteTableName($table) . ' DROP PRIMARY KEY';
     }
@@ -125,7 +125,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * {@inheritdoc}
      */
-    public function dropUnique($name, $table)
+    public function dropUnique(string $name, string $table): string
     {
         return $this->dropIndex($name, $table);
     }
@@ -134,7 +134,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * {@inheritdoc}
      * @throws NotSupportedException this is not supported by MySQL.
      */
-    public function addCheck($name, $table, $expression)
+    public function addCheck(string $name, string $table, string $expression): string
     {
         throw new NotSupportedException(__METHOD__ . ' is not supported by MySQL.');
     }
@@ -143,7 +143,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * {@inheritdoc}
      * @throws NotSupportedException this is not supported by MySQL.
      */
-    public function dropCheck($name, $table)
+    public function dropCheck(string $name, string $table): string
     {
         throw new NotSupportedException(__METHOD__ . ' is not supported by MySQL.');
     }
@@ -158,7 +158,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * @return string the SQL statement for resetting sequence
      * @throws InvalidArgumentException if the table does not exist or there is no sequence associated with the table.
      */
-    public function resetSequence($tableName, $value = null)
+    public function resetSequence(string $tableName, $value = null): string
     {
         $table = $this->db->getTableSchema($tableName);
         if ($table !== null && $table->sequenceName !== null) {
@@ -185,7 +185,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * @param string $table the table name. Meaningless for MySQL.
      * @return string the SQL statement for checking integrity
      */
-    public function checkIntegrity($check = true, $schema = '', $table = '')
+    public function checkIntegrity(bool $check = true, string $schema = '', string $table = ''): string
     {
         return 'SET FOREIGN_KEY_CHECKS = ' . ($check ? 1 : 0);
     }
@@ -193,7 +193,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * {@inheritdoc}
      */
-    public function buildLimit($limit, $offset)
+    public function buildLimit(int $limit, int $offset): string
     {
         $sql = '';
         if ($this->hasLimit($limit)) {
@@ -214,7 +214,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * {@inheritdoc}
      */
-    protected function hasLimit($limit)
+    protected function hasLimit($limit): bool
     {
         // In MySQL limit argument must be nonnegative integer constant
         return ctype_digit((string)$limit);
@@ -223,7 +223,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * {@inheritdoc}
      */
-    protected function hasOffset($offset)
+    protected function hasOffset($offset): bool
     {
         // In MySQL offset argument must be nonnegative integer constant
         $offset = (string)$offset;
@@ -231,10 +231,14 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     }
 
     /**
-     * {@inheritdoc}
-     * @see https://downloads.mysql.com/docs/refman-5.1-en.pdf
+     * @param string $table
+     * @param array|Query $insertColumns
+     * @param array|bool $updateColumns
+     * @param array $params
+     * @return string
+     * @throws Exception
      */
-    public function upsert($table, $insertColumns, $updateColumns, &$params)
+    public function upsert(string $table, $insertColumns, $updateColumns, array &$params): string
     {
         $insertSql = $this->insert($table, $insertColumns, $params);
         [$uniqueNames, , $updateNames] = $this->prepareUpsertColumns($table, $insertColumns, $updateColumns);
@@ -259,16 +263,17 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * {@inheritdoc}
      * @since 2.0.8
      */
-    public function dropCommentFromColumn($table, $column)
+    public function dropCommentFromColumn(string $table, string $column): string
     {
         return $this->addCommentOnColumn($table, $column, '');
     }
 
     /**
      * {@inheritdoc}
+     * @throws Exception
      * @since 2.0.8
      */
-    public function addCommentOnColumn($table, $column, $comment)
+    public function addCommentOnColumn(string $table, string $column, string $comment): string
     {
         // Strip existing comment which may include escaped quotes
         $definition = trim(preg_replace(
@@ -320,7 +325,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * {@inheritdoc}
      * @since 2.0.8
      */
-    public function dropCommentFromTable($table)
+    public function dropCommentFromTable(string $table): string
     {
         return $this->addCommentOnTable($table, '');
     }
@@ -329,7 +334,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
      * {@inheritdoc}
      * @since 2.0.8
      */
-    public function addCommentOnTable($table, $comment)
+    public function addCommentOnTable(string $table, string $comment): string
     {
         return 'ALTER TABLE ' . $this->db->quoteTableName($table) . ' COMMENT ' . $this->db->quoteValue($comment);
     }
@@ -337,7 +342,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * {@inheritdoc}
      */
-    protected function defaultExpressionBuilders()
+    protected function defaultExpressionBuilders(): array
     {
         return array_merge(parent::defaultExpressionBuilders(), [
             \rabbit\db\JsonExpression::class => JsonExpressionBuilder::class,
@@ -347,7 +352,7 @@ class QueryBuilder extends \rabbit\db\QueryBuilder
     /**
      * {@inheritdoc}
      */
-    protected function prepareInsertValues($table, $columns, $params = [])
+    protected function prepareInsertValues(string $table, $columns, array $params = []): array
     {
         [$names, $placeholders, $values, $params] = parent::prepareInsertValues($table, $columns, $params);
         if (!$columns instanceof Query && empty($names)) {

@@ -1,12 +1,12 @@
 <?php
+declare(strict_types=1);
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
-use rabbit\activerecord\ActiveRecord;
-use rabbit\db\DBHelper;
-use rabbit\db\Exception;
-use rabbit\db\Query;
-use rabbit\helper\ArrayHelper;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\DB\DBHelper;
+use Rabbit\DB\Exception;
+use Rabbit\DB\Query;
 
 /**
  * Class DeleteExt
@@ -15,12 +15,13 @@ use rabbit\helper\ArrayHelper;
 class DeleteExt
 {
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
+     * @param bool $useOrm
      * @return int
      * @throws Exception
      */
-    public static function delete(ActiveRecord $model, array $body, bool $useOrm = false): int
+    public static function delete($model, array $body, bool $useOrm = false): int
     {
         if (ArrayHelper::isIndexed($body)) {
             $result = $model::getDb()->deleteSeveral($model, $body);

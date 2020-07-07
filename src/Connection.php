@@ -1,29 +1,35 @@
 <?php
 declare(strict_types=1);
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
 use PDO;
-use rabbit\activerecord\ActiveRecord;
-use rabbit\App;
-use rabbit\db\DbContext;
-use rabbit\db\Expression;
-use rabbit\db\JsonExpression;
-use rabbit\exception\NotSupportedException;
-use rabbit\helper\ArrayHelper;
-use rabbit\helper\JsonHelper;
-use rabbit\pool\ConnectionInterface;
-use rabbit\web\HttpException;
+use Psr\SimpleCache\InvalidArgumentException;
+use Rabbit\Base\Core\UserException;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\Base\Helper\JsonHelper;
+use Rabbit\DB\ConnectionInterface;
+use Rabbit\DB\Expression;
+use Rabbit\DB\JsonExpression;
+use Throwable;
 
 /**
  * Class Connection
  * @package rabbit\db\mysql
  */
-class Connection extends \rabbit\db\Connection implements ConnectionInterface
+class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
 {
+    /** @var array|string[] */
+    public array $schemaMap = [
+        'mysqli' => Schema::class, // MySQL
+        'mysql' => Schema::class, // MySQL
+    ];
+
     /**
      * Connection constructor.
-     * @param array|null $dsn
+     * @param string $dsn
+     * @param string $poolKey
      */
     public function __construct(string $dsn, string $poolKey)
     {
@@ -33,7 +39,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     }
 
     /**
-     * @return mixed|\PDO
+     * @return PDO
      */
     public function createPdoInstance()
     {
@@ -62,13 +68,14 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $array_columns
      * @return int
-     * @throws HttpException
-     * @throws \rabbit\exception\InvalidConfigException
+     * @throws InvalidArgumentException
+     * @throws NotSupportedException
+     * @throws Throwable
      */
-    public function saveSeveral(ActiveRecord $model, array $array_columns): int
+    public function saveSeveral($model, array $array_columns): int
     {
         if (empty($array_columns)) {
             return 0;
@@ -103,7 +110,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
                         }
                     }
                     if ($this->saveSeveral($child_model, $item[$key]) === false) {
-                        return false;
+                        return 0;
                     }
                 }
             }
@@ -111,7 +118,7 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $placeholders = array();
             $table->isNewRecord = false;
             if (!$table->validate()) {
-                throw new HttpException(implode(BREAKS, $table->getFirstErrors()));
+                throw new UserException(implode(BREAKS, $table->getFirstErrors()));
             }
             $tableArray = $table->toArray();
             if ($keys) {
@@ -158,13 +165,11 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
     }
 
     /**
-     * @param ActiveRecord $table
+     * @param $table
      * @param array $array_columns
      * @return int
-     * @throws \rabbit\db\Exception
-     * @throws \rabbit\exception\InvalidConfigException
      */
-    public function deleteSeveral(ActiveRecord $table, array $array_columns): int
+    public function deleteSeveral($table, array $array_columns): int
     {
         if (empty($array_columns)) {
             return 0;
@@ -179,11 +184,12 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
             $table->load($item, '');
             $table->isNewRecord = false;
             foreach ($table->getRelations() as $child => $val) {
-                $key = strtolower(end(explode("\\", $child)));
+                $classArr = explode("\\", $child);
+                $key = strtolower(end($classArr));
                 if (isset($item[$key])) {
                     $child_model = new $child();
                     if ($this->deleteSeveral($child_model, $item[$key]) === false) {
-                        return false;
+                        return 0;
                     }
                 }
             }
@@ -198,6 +204,6 @@ class Connection extends \rabbit\db\Connection implements ConnectionInterface
         if ($condition) {
             $result = $table->deleteAll($condition);
         }
-        return $result;
+        return (int)$result;
     }
 }

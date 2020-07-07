@@ -1,24 +1,24 @@
 <?php
 declare(strict_types=1);
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
 use Co\MySQL;
-use rabbit\core\Context;
-use rabbit\db\DbContext;
-use rabbit\db\Exception;
-use rabbit\helper\ArrayHelper;
+use Rabbit\Base\Core\Context;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\DB\DbContext;
+use Rabbit\DB\Exception;
 
 /**
  * Class SwooleConnection
- * @package rabbit\db\mysql
+ * @package Rabbit\DB\Mysql
  */
 class SwooleConnection extends Connection
 {
     /** @var string */
-    protected $commandClass = SwooleCommand::class;
-    /** @var string |SwooleTransaction */
-    protected $transactionClass = SwooleTransaction::class;
+    protected string $commandClass = SwooleCommand::class;
+    /** @var string */
+    protected string $transactionClass = SwooleTransaction::class;
 
     /**
      * SwooleConnection constructor.
@@ -32,7 +32,7 @@ class SwooleConnection extends Connection
     }
 
     /**
-     * @return MySQL|\PDO
+     * @return MySQL
      * @throws Exception
      */
     public function createPdoInstance()

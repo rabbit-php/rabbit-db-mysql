@@ -1,33 +1,38 @@
 <?php
+declare(strict_types=1);
 
+namespace Rabbit\DB\Mysql;
 
-namespace rabbit\db\mysql;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\DB\Command;
+use Rabbit\DB\DataReader;
+use ReflectionException;
 
-use rabbit\core\ObjectFactory;
-use rabbit\db\Command;
-use rabbit\db\DataReader;
-use rabbit\exception\NotSupportedException;
-
+/**
+ * Class SwooleDataReader
+ * @package Rabbit\DB\Mysql
+ */
 class SwooleDataReader extends DataReader
 {
     /**
      * DataReader constructor.
      * @param Command $command
      * @param array $config
+     * @throws ReflectionException
      */
     public function __construct(Command $command, $config = [])
     {
         $this->_statement = $command->pdoStatement;
-        ObjectFactory::configure($this, $config);
+        configure($this, $config);
     }
 
     /**
      * @param int|string $column
      * @param mixed $value
-     * @param null $dataType
+     * @param int $dataType
      * @throws NotSupportedException
      */
-    public function bindColumn($column, &$value, $dataType = null)
+    public function bindColumn($column, &$value, int $dataType = null): void
     {
         throw new NotSupportedException("Swoole mysql not support " . __METHOD__);
     }
@@ -36,7 +41,7 @@ class SwooleDataReader extends DataReader
      * @param int $mode
      * @throws NotSupportedException
      */
-    public function setFetchMode($mode)
+    public function setFetchMode(int $mode): void
     {
         throw new NotSupportedException("Swoole mysql not support " . __METHOD__);
     }
@@ -46,7 +51,7 @@ class SwooleDataReader extends DataReader
      * @return mixed|void
      * @throws NotSupportedException
      */
-    public function readColumn($columnIndex)
+    public function readColumn(int $columnIndex)
     {
         throw new NotSupportedException("Swoole mysql not support " . __METHOD__);
     }
@@ -57,7 +62,7 @@ class SwooleDataReader extends DataReader
      * @return mixed|void
      * @throws NotSupportedException
      */
-    public function readObject($className, $fields)
+    public function readObject(string $className, array $fields)
     {
         throw new NotSupportedException("Swoole mysql not support " . __METHOD__);
     }
@@ -74,14 +79,13 @@ class SwooleDataReader extends DataReader
         return $result;
     }
 
-    public function close()
+    public function close(): void
     {
-        while ($this->_statement->fetch()) {
-        }
+        while ($this->_statement->fetch());
         $this->_closed = true;
     }
 
-    public function getIsClosed()
+    public function getIsClosed(): bool
     {
         return $this->_closed;
     }
@@ -89,7 +93,7 @@ class SwooleDataReader extends DataReader
     /**
      * @return int
      */
-    public function getRowCount()
+    public function getRowCount(): int
     {
         return $this->_statement->affected_rows;
     }
@@ -98,7 +102,7 @@ class SwooleDataReader extends DataReader
      * @return int|void
      * @throws NotSupportedException
      */
-    public function getColumnCount()
+    public function getColumnCount(): int
     {
         throw new NotSupportedException("Swoole mysql not support " . __METHOD__);
     }

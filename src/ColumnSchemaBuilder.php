@@ -1,13 +1,17 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
-use rabbit\db\ColumnSchemaBuilder as AbstractColumnSchemaBuilder;
+use Psr\SimpleCache\InvalidArgumentException;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\DB\ColumnSchemaBuilder as AbstractColumnSchemaBuilder;
+use Throwable;
 
 /**
  * ColumnSchemaBuilder is the schema builder for MySQL databases.
@@ -39,15 +43,18 @@ class ColumnSchemaBuilder extends AbstractColumnSchemaBuilder
     /**
      * {@inheritdoc}
      */
-    protected function buildUnsignedString()
+    protected function buildUnsignedString(): string
     {
         return $this->isUnsigned ? ' UNSIGNED' : '';
     }
 
     /**
-     * {@inheritdoc}
+     * @return string
+     * @throws InvalidArgumentException
+     * @throws NotSupportedException
+     * @throws Throwable
      */
-    protected function buildAfterString()
+    protected function buildAfterString(): string
     {
         return $this->after !== null ?
             ' AFTER ' . $this->db->quoteColumnName($this->after) :
@@ -57,15 +64,18 @@ class ColumnSchemaBuilder extends AbstractColumnSchemaBuilder
     /**
      * {@inheritdoc}
      */
-    protected function buildFirstString()
+    protected function buildFirstString(): string
     {
         return $this->isFirst ? ' FIRST' : '';
     }
 
     /**
-     * {@inheritdoc}
+     * @return string
+     * @throws InvalidArgumentException
+     * @throws NotSupportedException
+     * @throws Throwable
      */
-    protected function buildCommentString()
+    protected function buildCommentString(): string
     {
         return $this->comment !== null ? ' COMMENT ' . $this->db->quoteValue($this->comment) : '';
     }

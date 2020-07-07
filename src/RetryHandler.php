@@ -1,20 +1,20 @@
 <?php
+declare(strict_types=1);
 
+namespace Rabbit\DB\Mysql;
 
-namespace rabbit\db\mysql;
-
-use rabbit\db\ConnectionInterface;
-use rabbit\db\Exception;
-use rabbit\db\RetryHandlerInterface;
+use Rabbit\DB\Exception;
+use Rabbit\DB\RetryHandlerInterface;
+use Throwable;
 
 /**
  * Class RetryHandler
- * @package rabbit\db\mysql
+ * @package Rabbit\DB\Mysql
  */
 class RetryHandler extends RetryHandlerInterface
 {
     /** @var int */
-    private $sleep = 1;
+    private int $sleep = 1;
 
     /**
      * RetryHandler constructor.
@@ -42,12 +42,11 @@ class RetryHandler extends RetryHandlerInterface
     }
 
     /**
-     * @param ConnectionInterface $db
-     * @param \Throwable $e
+     * @param Throwable $e
      * @param int $count
      * @return bool
      */
-    public function handle(\Throwable $e, int $count): bool
+    public function handle(Throwable $e, int $count): bool
     {
         $isConnectionError = $this->isConnectionError($e);
         if ($isConnectionError && $count < $this->totalCount) {
@@ -58,10 +57,10 @@ class RetryHandler extends RetryHandlerInterface
     }
 
     /**
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @return bool
      */
-    private function isConnectionError(\Throwable $exception): bool
+    private function isConnectionError(Throwable $exception): bool
     {
         if ($exception instanceof Exception) {
             $errorInfo = $exception->errorInfo;

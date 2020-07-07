@@ -1,26 +1,26 @@
 <?php
+declare(strict_types=1);
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
-use rabbit\activerecord\ActiveRecord;
-use rabbit\db\Exception;
-use rabbit\helper\ArrayHelper;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\DB\Exception;
 
 /**
  * Class CreateExt
- * @package rabbit\db\mysql
+ * @package Rabbit\DB\Mysql
  */
 class CreateExt
 {
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
-     * @param bool $hasRealation
+     * @param bool $batch
      * @return array
      * @throws Exception
      */
     public static function create(
-        ActiveRecord $model,
+        $model,
         array $body,
         bool $batch = true
     ): array
@@ -42,12 +42,12 @@ class CreateExt
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
      * @return array
      * @throws Exception
      */
-    private static function createSeveral(ActiveRecord $model, array $body): array
+    private static function createSeveral($model, array $body): array
     {
         $model->load($body, '');
         if ($model->save()) {
@@ -61,12 +61,12 @@ class CreateExt
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param $model
      * @param array $body
      * @return array
      * @throws Exception
      */
-    private static function saveRealation(ActiveRecord $model, array $body): array
+    private static function saveRealation($model, array $body): array
     {
         $result = [];
         //关联模型

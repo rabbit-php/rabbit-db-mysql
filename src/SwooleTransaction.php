@@ -1,23 +1,32 @@
 <?php
+declare(strict_types=1);
+namespace Rabbit\DB\Mysql;
 
-namespace rabbit\db\mysql;
-
-use rabbit\App;
-use rabbit\db\Transaction;
-use rabbit\exception\NotSupportedException;
+use DI\DependencyException;
+use DI\NotFoundException;
+use Psr\SimpleCache\InvalidArgumentException;
+use Rabbit\Base\App;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\DB\Exception;
+use Rabbit\DB\Transaction;
+use Throwable;
 
 /**
  * Class SwooleTransaction
- * @package rabbit\db\mysql
+ * @package Rabbit\DB\Mysql
  */
 class SwooleTransaction extends Transaction
 {
     /**
-     * @param null $isolationLevel
+     * @param string|null $isolationLevel
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws InvalidArgumentException
      * @throws NotSupportedException
-     * @throws \rabbit\db\Exception
+     * @throws Exception
+     * @throws Throwable
      */
-    public function begin($isolationLevel = null)
+    public function begin(?string $isolationLevel = null): void
     {
         if ($this->db === null) {
             throw new \InvalidArgumentException('Transaction::db must be set.');

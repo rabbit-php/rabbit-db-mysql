@@ -1,14 +1,15 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
-use rabbit\db\ExpressionInterface;
-use rabbit\db\JsonExpression;
+use Rabbit\DB\ExpressionInterface;
+use Rabbit\DB\JsonExpression;
 
 /**
  * Class ColumnSchema for MySQL database
@@ -16,7 +17,7 @@ use rabbit\db\JsonExpression;
  * @author Dmytro Naumenko <d.naumenko.a@gmail.com>
  * @since 2.0.14.1
  */
-class ColumnSchema extends \rabbit\db\ColumnSchema
+class ColumnSchema extends \Rabbit\DB\ColumnSchema
 {
     /**
      * {@inheritdoc}
@@ -24,7 +25,7 @@ class ColumnSchema extends \rabbit\db\ColumnSchema
     public function dbTypecast($value)
     {
         if ($value === null) {
-            return $value;
+            return null;
         }
 
         if ($value instanceof ExpressionInterface) {

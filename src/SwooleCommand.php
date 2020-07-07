@@ -1,26 +1,27 @@
 <?php
+declare(strict_types=1);
 
-namespace rabbit\db\mysql;
+namespace Rabbit\DB\Mysql;
 
+use PDO;
 use Psr\SimpleCache\CacheInterface;
-use rabbit\db\Command;
-use rabbit\db\DataReader;
-use rabbit\db\Exception;
-use rabbit\exception\NotSupportedException;
+use Psr\SimpleCache\InvalidArgumentException;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\DB\Command;
+use Rabbit\DB\Exception;
+use Throwable;
 
 /**
  * Class SwooleCommand
- * @package rabbit\db\mysql
+ * @package Rabbit\DB\Mysql
  */
 class SwooleCommand extends Command
 {
     /**
-     * @param null $forRead
-     * @return \PDO|void
-     * @throws Exception
-     * @throws NotSupportedException
+     * @param bool|null $forRead
+     * @throws Throwable
      */
-    public function prepare($forRead = null)
+    public function prepare(?bool $forRead = null)
     {
         if ($this->pdoStatement) {
             return;
@@ -42,7 +43,7 @@ class SwooleCommand extends Command
             if (false === $this->pdoStatement = $pdo->prepare($sql)) {
                 throw new Exception($pdo->error);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $message = $e->getMessage() . " Failed to prepare SQL: $sql";
             $e = new Exception($message, $pdo->error, (int)$e->getCode(), $e);
             throw $e;
@@ -51,12 +52,13 @@ class SwooleCommand extends Command
 
     /**
      * @param string $method
-     * @param null $fetchMode
-     * @return mixed|DataReader
-     * @throws \Psr\SimpleCache\InvalidArgumentException
-     * @throws \Throwable
+     * @param int $fetchMode
+     * @return mixed|SwooleDataReader
+     * @throws InvalidArgumentException
+     * @throws NotSupportedException
+     * @throws Throwable
      */
-    protected function queryInternal($method, $fetchMode = null)
+    protected function queryInternal(string $method, int $fetchMode = null)
     {
         $rawSql = $this->getRawSql();
 
@@ -90,7 +92,7 @@ class SwooleCommand extends Command
             switch ($method) {
                 case 'fetchAll':
                     while ($ret = $this->pdoStatement->fetch()) {
-                        if ($fetchMode === \PDO::FETCH_COLUMN) {
+                        if ($fetchMode === PDO::FETCH_COLUMN) {
                             foreach ($ret as $item) {
                                 $result[] = is_array($item) ? current($item) : $item;
                             }
@@ -119,7 +121,7 @@ class SwooleCommand extends Command
                 default:
                     $result = new SwooleDataReader($this);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             throw $e;
         }
 
@@ -132,10 +134,11 @@ class SwooleCommand extends Command
 
     /**
      * @param string|null $rawSql
-     * @throws Exception
+     * @throws InvalidArgumentException
      * @throws NotSupportedException
+     * @throws Throwable
      */
-    protected function internalExecute($rawSql)
+    protected function internalExecute(?string $rawSql): void
     {
         $attempt = 0;
         while (true) {
@@ -155,7 +158,7 @@ class SwooleCommand extends Command
                 $this->params = [];
                 $this->_pendingParams = [];
                 break;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $rawSql = $rawSql ?: $this->getRawSql();
                 $e = $this->db->getSchema()->convertException($e, $rawSql);
                 $this->pdoStatement = null;
@@ -169,9 +172,12 @@ class SwooleCommand extends Command
 
     /**
      * @return int
-     * @throws \Exception
+     * @throws Exception
+     * @throws InvalidArgumentException
+     * @throws NotSupportedException
+     * @throws Throwable
      */
-    public function execute()
+    public function execute(): int
     {
         $sql = $this->_sql;
         $rawSql = $this->getRawSql();
