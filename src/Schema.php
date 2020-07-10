@@ -36,6 +36,8 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
      * {@inheritdoc}
      */
     public string $columnSchemaClass = ColumnSchema::class;
+    /** @var string */
+    protected string $builderClass = QueryBuilder::class;
     /**
      * @var array mapping from physical column types (keys) to abstract column types (values)
      */
@@ -82,15 +84,6 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
      * @var bool whether MySQL used is older than 5.1.
      */
     private bool $_oldMysql;
-
-    /**
-     * Creates a query builder for the MySQL database.
-     * @return QueryBuilder query builder instance
-     */
-    public function createQueryBuilder(): QueryBuilder
-    {
-        return new QueryBuilder($this->db);
-    }
 
     /**
      * Returns all unique indexes for the given table.
