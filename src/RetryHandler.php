@@ -11,36 +11,8 @@ use Throwable;
  * Class RetryHandler
  * @package Rabbit\DB\Mysql
  */
-class RetryHandler extends RetryHandlerInterface
+class RetryHandler extends \Rabbit\DB\RetryHandler
 {
-    /** @var int */
-    private int $sleep = 1;
-
-    /**
-     * RetryHandler constructor.
-     * @param int $totalCount
-     */
-    public function __construct(int $totalCount = 3)
-    {
-        $this->totalCount = $totalCount;
-    }
-
-    /**
-     * @return int
-     */
-    public function getTotalCount(): int
-    {
-        return $this->totalCount;
-    }
-
-    /**
-     * @param int $count
-     */
-    public function setTotalCount(int $count): void
-    {
-        $this->totalCount = $count;
-    }
-
     /**
      * @param Throwable $e
      * @param int $count
