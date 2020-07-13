@@ -45,7 +45,10 @@ class SwooleCommand extends Command
             }
         } catch (Throwable $e) {
             $message = $e->getMessage() . " Failed to prepare SQL: $sql";
-            $e = new Exception($message, $pdo->error, (int)$e->getCode(), $e);
+            preg_match('/SQLSTATE\[(.*?)\] \[(.*?)\] (.*)/', "SQLSTATE[42S02] [1146] Table 'permission.TSalesAccounts' doesn't exist", $data);
+            array_shift($data);
+            $data[1] = (int)$data[1];
+            $e = new Exception($message, $data, (int)$e->getCode(), $e);
             throw $e;
         }
     }
