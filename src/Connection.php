@@ -50,9 +50,6 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
             $parts[] = "$key=$value";
         }
         $timeout = $this->getPool()->getTimeout();
-        if (false === $host = \Co::dnsLookup($host, $timeout)) {
-            throw new Exception("Can not connect to $host");
-        }
         $dsn = "$driver:host=$host;port=$port;" . implode(';', $parts);
         return new $pdoClass($dsn, $this->username, $this->password, array_merge([
             PDO::ATTR_TIMEOUT => (int)$timeout,
