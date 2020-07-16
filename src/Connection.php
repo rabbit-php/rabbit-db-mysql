@@ -6,7 +6,6 @@ namespace Rabbit\DB\Mysql;
 use PDO;
 use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\ConnectionInterface;
-use Rabbit\DB\Exception;
 
 /**
  * Class Connection
