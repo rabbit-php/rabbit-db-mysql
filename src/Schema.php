@@ -18,6 +18,7 @@ use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\Constraint;
 use Rabbit\DB\ConstraintFinderInterface;
 use Rabbit\DB\ConstraintFinderTrait;
+use Rabbit\DB\Expression;
 use Rabbit\DB\IndexConstraint;
 use Rabbit\DB\TableSchema;
 use Throwable;
