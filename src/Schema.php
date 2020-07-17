@@ -42,7 +42,7 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
     /**
      * @var array mapping from physical column types (keys) to abstract column types (values)
      */
-    public array $typeMap = [
+    public static array $typeMap = [
         'tinyint' => self::TYPE_TINYINT,
         'bit' => self::TYPE_INTEGER,
         'smallint' => self::TYPE_SMALLINT,
@@ -277,8 +277,8 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         $column->type = self::TYPE_STRING;
         if (preg_match('/^(\w+)(?:\(([^\)]+)\))?/', $column->dbType, $matches)) {
             $type = strtolower($matches[1]);
-            if (isset($this->typeMap[$type])) {
-                $column->type = $this->typeMap[$type];
+            if (isset(self::$typeMap[$type])) {
+                $column->type = self::$typeMap[$type];
             }
             if (!empty($matches[2])) {
                 if ($type === 'enum') {
