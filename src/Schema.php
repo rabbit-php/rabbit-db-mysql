@@ -21,6 +21,7 @@ use Rabbit\DB\ConstraintFinderTrait;
 use Rabbit\DB\Expression;
 use Rabbit\DB\IndexConstraint;
 use Rabbit\DB\TableSchema;
+use ReflectionException;
 use Throwable;
 
 /**
@@ -33,15 +34,8 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
 {
     use ConstraintFinderTrait;
 
-    /**
-     * {@inheritdoc}
-     */
     public string $columnSchemaClass = ColumnSchema::class;
-    /** @var string */
     protected string $builderClass = QueryBuilder::class;
-    /**
-     * @var array mapping from physical column types (keys) to abstract column types (values)
-     */
     public static array $typeMap = [
         'tinyint' => self::TYPE_TINYINT,
         'bit' => self::TYPE_INTEGER,
@@ -73,33 +67,17 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         'varbinary' => self::TYPE_BINARY,
         'json' => self::TYPE_JSON,
     ];
-    /**
-     * {@inheritdoc}
-     */
     protected string $tableQuoteCharacter = '`';
-    /**
-     * {@inheritdoc}
-     */
     protected string $columnQuoteCharacter = '`';
-    /**
-     * @var bool whether MySQL used is older than 5.1.
-     */
     private bool $_oldMysql;
 
     /**
-     * Returns all unique indexes for the given table.
-     *
-     * Each array element is of the following structure:
-     *
-     * ```php
-     * [
-     *     'IndexName1' => ['col1' [, ...]],
-     *     'IndexName2' => ['col2' [, ...]],
-     * ]
-     * ```
-     *
-     * @param TableSchema $table the table metadata
-     * @return array all unique indexes for the given table.
+     * @param TableSchema $table
+     * @return array
+     * @throws DependencyException
+     * @throws InvalidArgumentException
+     * @throws NotFoundException
+     * @throws Throwable
      */
     public function findUniqueIndexes(TableSchema $table): array
     {
@@ -183,8 +161,12 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
     }
 
     /**
-     * {@inheritdoc}
-     * @throws Exception
+     * @param string $name
+     * @return TableSchema|null
+     * @throws DependencyException
+     * @throws InvalidArgumentException
+     * @throws NotFoundException
+     * @throws Throwable
      */
     protected function loadTableSchema(string $name): ?TableSchema
     {
@@ -259,7 +241,7 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
      * @param array $info column information
      * @return ColumnSchema the column schema object
      * @throws DependencyException
-     * @throws NotFoundException
+     * @throws NotFoundException|ReflectionException
      */
     protected function loadColumnSchema(array $info): \Rabbit\DB\ColumnSchema
     {
@@ -393,7 +375,13 @@ SQL;
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $tableName
+     * @return Constraint|null
+     * @throws DependencyException
+     * @throws InvalidArgumentException
+     * @throws NotFoundException
+     * @throws NotSupportedException
+     * @throws Throwable
      */
     protected function loadTablePrimaryKey(string $tableName): ?Constraint
     {

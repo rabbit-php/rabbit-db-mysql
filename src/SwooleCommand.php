@@ -27,7 +27,7 @@ class SwooleCommand extends Command
             return;
         }
 
-        $sql = $this->_sql;
+        $sql = $this->sql;
 
         if ($this->db->getTransaction()) {
             // master is in a transaction. use the same connection.
@@ -182,7 +182,7 @@ class SwooleCommand extends Command
      */
     public function execute(): int
     {
-        $sql = $this->_sql;
+        $sql = $this->sql;
         $rawSql = $this->getRawSql();
         $this->logQuery($rawSql);
         if ($sql == '') {

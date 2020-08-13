@@ -22,14 +22,14 @@ class SwooleDataReader extends DataReader
      */
     public function __construct(Command $command, $config = [])
     {
-        $this->_statement = $command->pdoStatement;
+        $this->statement = $command->pdoStatement;
         configure($this, $config);
     }
 
     /**
      * @param int|string $column
      * @param mixed $value
-     * @param int $dataType
+     * @param int|null $dataType
      * @throws NotSupportedException
      */
     public function bindColumn($column, &$value, int $dataType = null): void
@@ -72,8 +72,8 @@ class SwooleDataReader extends DataReader
      */
     public function nextResult()
     {
-        if (($result = $this->_statement->nextResult()) !== false) {
-            $this->_index = -1;
+        if (($result = $this->statement->nextResult()) !== false) {
+            $this->index = -1;
         }
 
         return $result;
@@ -81,13 +81,13 @@ class SwooleDataReader extends DataReader
 
     public function close(): void
     {
-        while ($this->_statement->fetch());
-        $this->_closed = true;
+        while ($this->statement->fetch()) ;
+        $this->closed = true;
     }
 
     public function getIsClosed(): bool
     {
-        return $this->_closed;
+        return $this->closed;
     }
 
     /**
@@ -95,7 +95,7 @@ class SwooleDataReader extends DataReader
      */
     public function getRowCount(): int
     {
-        return $this->_statement->affected_rows;
+        return $this->statement->affected_rows;
     }
 
     /**
