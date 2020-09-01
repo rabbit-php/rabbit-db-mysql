@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Rabbit\DB\Mysql;
@@ -50,8 +51,16 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
         }
         $timeout = $this->getPool()->getTimeout();
         $dsn = "$driver:host=$host;port=$port;" . implode(';', $parts);
-        return new $pdoClass($dsn, $this->username, $this->password, array_merge([
+        $pdo = new $pdoClass($dsn, $this->username, $this->password, array_merge([
             PDO::ATTR_TIMEOUT => (int)$timeout,
         ], $this->attributes ?? []));
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        if ($this->emulatePrepare !== null && constant('PDO::ATTR_EMULATE_PREPARES')) {
+            $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, $this->emulatePrepare);
+        }
+        if ($this->charset !== null) {
+            $pdo->exec('SET NAMES ' . $pdo->quote($this->charset));
+        }
+        return $pdo;
     }
 }
