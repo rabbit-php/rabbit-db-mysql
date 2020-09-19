@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
@@ -186,7 +187,7 @@ class QueryBuilder extends \Rabbit\DB\QueryBuilder
      * @param string $table the table name. Meaningless for MySQL.
      * @return string the SQL statement for checking integrity
      */
-    public function checkIntegrity(bool $check = true, string $schema = '', string $table = ''): string
+    public function checkIntegrity(string $schema = '', string $table = '', bool $check = true): string
     {
         return 'SET FOREIGN_KEY_CHECKS = ' . ($check ? 1 : 0);
     }
@@ -242,7 +243,7 @@ class QueryBuilder extends \Rabbit\DB\QueryBuilder
     public function upsert(string $table, $insertColumns, $updateColumns, array &$params): string
     {
         $insertSql = $this->insert($table, $insertColumns, $params);
-        [$uniqueNames, , $updateNames] = $this->prepareUpsertColumns($table, $insertColumns, $updateColumns);
+        [$uniqueNames,, $updateNames] = $this->prepareUpsertColumns($table, $insertColumns, $updateColumns);
         if (empty($uniqueNames)) {
             return $insertSql;
         }
