@@ -9,11 +9,11 @@ declare(strict_types=1);
 
 namespace Rabbit\DB\Mysql;
 
-use InvalidArgumentException;
-use Rabbit\Base\Exception\NotSupportedException;
-use Rabbit\DB\Exception;
-use Rabbit\DB\JsonExpression;
 use Rabbit\DB\Query;
+use Rabbit\DB\Exception;
+use InvalidArgumentException;
+use Rabbit\DB\JsonExpression;
+use Rabbit\Base\Exception\NotSupportedException;
 
 /**
  * QueryBuilder is the query builder for MySQL databases.
@@ -240,7 +240,7 @@ class QueryBuilder extends \Rabbit\DB\QueryBuilder
      * @return string
      * @throws Exception
      */
-    public function upsert(string $table, $insertColumns, $updateColumns, array &$params): string
+    public function upsert(string $table, $insertColumns, $updateColumns, array &$params = []): string
     {
         $insertSql = $this->insert($table, $insertColumns, $params);
         [$uniqueNames,, $updateNames] = $this->prepareUpsertColumns($table, $insertColumns, $updateColumns);
