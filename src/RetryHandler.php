@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Rabbit\DB\Mysql;
 
-use Rabbit\DB\Exception;
 use Throwable;
+use Rabbit\DB\Exception;
 
 /**
  * Class RetryHandler
@@ -21,7 +22,7 @@ class RetryHandler extends \Rabbit\DB\RetryHandler
     {
         $isConnectionError = $this->isConnectionError($e);
         if ($isConnectionError && $count < $this->totalCount) {
-            $count > 1 && \Co::sleep($this->sleep);
+            $count > 1 && sleep($this->sleep);
             return true;
         }
         return false;
@@ -38,9 +39,9 @@ class RetryHandler extends \Rabbit\DB\RetryHandler
             if (!empty($errorInfo) && ($errorInfo[1] == 70100 || $errorInfo[1] == 2006)) {
                 return true;
             } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos(
-                    $exception->getMessage(),
-                    'Error while sending QUERY packet. PID='
-                ) !== false) {
+                $exception->getMessage(),
+                'Error while sending QUERY packet. PID='
+            ) !== false) {
                 return true;
             }
         }

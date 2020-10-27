@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
@@ -8,21 +9,20 @@ declare(strict_types=1);
 
 namespace Rabbit\DB\Mysql;
 
-use Co\MySQL;
-use DI\DependencyException;
-use DI\NotFoundException;
 use Exception;
+use Throwable;
+use ReflectionException;
+use DI\NotFoundException;
+use Rabbit\DB\Constraint;
+use Rabbit\DB\Expression;
+use Rabbit\DB\TableSchema;
+use DI\DependencyException;
+use Rabbit\DB\IndexConstraint;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\DB\ConstraintFinderTrait;
+use Rabbit\DB\ConstraintFinderInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use Rabbit\Base\Exception\NotSupportedException;
-use Rabbit\Base\Helper\ArrayHelper;
-use Rabbit\DB\Constraint;
-use Rabbit\DB\ConstraintFinderInterface;
-use Rabbit\DB\ConstraintFinderTrait;
-use Rabbit\DB\Expression;
-use Rabbit\DB\IndexConstraint;
-use Rabbit\DB\TableSchema;
-use ReflectionException;
-use Throwable;
 
 /**
  * Schema is the class for retrieving metadata from a MySQL database (version 4.1.x and 5.x).
@@ -220,7 +220,7 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
             throw $e;
         }
         foreach ($columns as $info) {
-            if ($this->db->getSlavePdo() instanceof MySQL || ($this->db->getSlavePdo()->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER)) {
+            if ($this->db->getSlavePdo()->getAttribute(\PDO::ATTR_CASE) !== \PDO::CASE_LOWER) {
                 $info = array_change_key_case($info, CASE_LOWER);
             }
             $column = $this->loadColumnSchema($info);
