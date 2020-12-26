@@ -40,7 +40,7 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
         $pdoClass = $this->pdoClass;
         $parsed = $this->parseDsn;
         isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
-        [$driver, $host, $port, $this->username, $this->password, $query] = ArrayHelper::getValueByArray(
+        [$driver, $host, $port, $username, $password, $query] = ArrayHelper::getValueByArray(
             $parsed,
             ['scheme', 'host', 'port', 'user', 'pass', 'query'],
             ['mysql', '127.0.0.1', '3306', '', '', []]
@@ -49,6 +49,8 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
         foreach ($query as $key => $value) {
             $parts[] = "$key=$value";
         }
+        $this->username = $this->username ?? $username;
+        $this->password = $this->password ?? $password;
         $timeout = $this->getPool()->getTimeout();
         $dsn = "$driver:host=$host;port=$port;" . implode(';', $parts);
         $pdo = new $pdoClass($dsn, $this->username, $this->password, array_merge([
