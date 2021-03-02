@@ -104,7 +104,8 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
      */
     public function quoteValue(string $str): string
     {
-        if ($this->db->getSlavePdo() instanceof \PDO && ($value = $this->db->getSlavePdo()->quote($str)) !== false) {
+        $slave = $this->db->getSlavePdo();
+        if ($slave instanceof \PDO && ($value = $slave->quote($str)) !== false) {
             return $value;
         }
 
