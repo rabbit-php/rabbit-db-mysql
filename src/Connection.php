@@ -29,7 +29,6 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
     {
         parent::__construct($dsn);
         $this->poolKey = $poolKey;
-        $this->driver = 'mysql';
     }
 
     /**
