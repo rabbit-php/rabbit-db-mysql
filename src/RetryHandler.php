@@ -13,17 +13,31 @@ use Rabbit\DB\Exception;
  */
 class RetryHandler extends \Rabbit\DB\RetryHandler
 {
+    protected array $retryCode = [1213];
     /**
      * @param Throwable $e
      * @param int $count
      * @return bool
      */
-    public function handle(Throwable $e, int $count): bool
+    public function handle(Throwable $e, int $count): int
     {
-        $isConnectionError = $this->isConnectionError($e);
-        if ($isConnectionError && $count < $this->totalCount) {
+        if ($this->isConnectionError($e) && $count < $this->totalCount) {
             $count > 1 && sleep($this->sleep);
-            return true;
+            return static::RETRY_CONNECT;
+        }
+        if ($this->isRetry($e) && $count < $this->totalCount) {
+            return static::RETRY_NOCONNECT;
+        }
+        return static::RETRY_NO;
+    }
+
+    private function isRetry(Throwable $exception): bool
+    {
+        if ($exception instanceof Exception) {
+            $errorInfo = $exception->errorInfo;
+            if ($errorInfo[1] ?? false &&  in_array((int)$errorInfo[1], $this->retryCode)) {
+                return true;
+            }
         }
         return false;
     }
@@ -36,7 +50,7 @@ class RetryHandler extends \Rabbit\DB\RetryHandler
     {
         if ($exception instanceof Exception) {
             $errorInfo = $exception->errorInfo;
-            if (!empty($errorInfo) && ($errorInfo[1] == 70100 || $errorInfo[1] == 2006)) {
+            if ($errorInfo[1] ?? false && ((int)$errorInfo[1] === 70100 || (int)$errorInfo[1] === 2006)) {
                 return true;
             } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos(
                 $exception->getMessage(),
