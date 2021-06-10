@@ -35,7 +35,7 @@ class RetryHandler extends \Rabbit\DB\RetryHandler
     {
         if ($exception instanceof Exception) {
             $errorInfo = $exception->errorInfo;
-            if ($errorInfo[1] ?? false &&  in_array((int)$errorInfo[1], $this->retryCode)) {
+            if (($errorInfo[1] ?? false) &&  in_array((int)$errorInfo[1], $this->retryCode)) {
                 return true;
             }
         }
@@ -50,7 +50,7 @@ class RetryHandler extends \Rabbit\DB\RetryHandler
     {
         if ($exception instanceof Exception) {
             $errorInfo = $exception->errorInfo;
-            if ($errorInfo[1] ?? false && ((int)$errorInfo[1] === 70100 || (int)$errorInfo[1] === 2006)) {
+            if (($errorInfo[1] ?? false) && ((int)$errorInfo[1] === 70100 || (int)$errorInfo[1] === 2006)) {
                 return true;
             } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos(
                 $exception->getMessage(),
