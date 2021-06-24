@@ -51,6 +51,7 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
         $this->username = $this->username ?? $username;
         $this->password = $this->password ?? $password;
         $timeout = $this->getPool()->getTimeout();
+        $this->share = $timeout ?? $timeout;
         $dsn = "$driver:host=$host;port=$port;" . implode(';', $parts);
         $pdo = new $pdoClass($dsn, $this->username, $this->password, array_merge([
             PDO::ATTR_TIMEOUT => (int)$timeout,
