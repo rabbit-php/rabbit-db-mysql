@@ -10,26 +10,16 @@ declare(strict_types=1);
 namespace Rabbit\DB\Mysql;
 
 use Exception;
-use Throwable;
-use ReflectionException;
-use DI\NotFoundException;
 use Rabbit\DB\Constraint;
 use Rabbit\DB\Expression;
 use Rabbit\DB\TableSchema;
-use DI\DependencyException;
 use Rabbit\DB\IndexConstraint;
 use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\ConstraintFinderTrait;
 use Rabbit\DB\ConstraintFinderInterface;
-use Psr\SimpleCache\InvalidArgumentException;
 use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\DB\ForeignKeyConstraint;
 
-/**
- * Schema is the class for retrieving metadata from a MySQL database (version 4.1.x and 5.x).
- *
- * @author Qiang Xue <qiang.xue@gmail.com>
- * @since 2.0
- */
 class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
 {
     use ConstraintFinderTrait;
@@ -71,14 +61,6 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
     protected string $columnQuoteCharacter = '`';
     private bool $_oldMysql;
 
-    /**
-     * @param TableSchema $table
-     * @return array
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws Throwable
-     */
     public function findUniqueIndexes(TableSchema $table): array
     {
         $sql = $this->getCreateTableSql($table);
@@ -96,12 +78,6 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         return $uniqueIndexes;
     }
 
-    /**
-     * @param string $str
-     * @return string
-     * @throws InvalidArgumentException
-     * @throws Throwable
-     */
     public function quoteValue(string $str): string
     {
         $slave = $this->db->getSlavePdo();
@@ -113,16 +89,7 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         return "'" . addcslashes(str_replace("'", "''", $str), "\000\n\r\\\032") . "'";
     }
 
-    /**
-     * Gets the CREATE TABLE sql string.
-     * @param TableSchema $table the table metadata
-     * @return string $sql the result of 'SHOW CREATE TABLE'
-     * @throws InvalidArgumentException
-     * @throws Throwable
-     * @throws DependencyException
-     * @throws NotFoundException
-     */
-    protected function getCreateTableSql($table)
+    protected function getCreateTableSql(TableSchema $table): string
     {
         $row = $this->db->createCommand('SHOW CREATE TABLE ' . $this->quoteTableName($table->fullName))->queryOne();
         if (isset($row['Create Table'])) {
@@ -135,22 +102,11 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         return $sql;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function createColumnSchemaBuilder(string $type, $length = null): \Rabbit\DB\ColumnSchemaBuilder
+    public function createColumnSchemaBuilder(string $type, int|string|array $length = null): \Rabbit\DB\ColumnSchemaBuilder
     {
         return new ColumnSchemaBuilder($type, $length, $this->db);
     }
 
-    /**
-     * @param string $schema
-     * @return array|null
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws Throwable
-     */
     protected function findTableNames(string $schema = ''): ?array
     {
         $sql = 'SHOW TABLES';
@@ -161,14 +117,6 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         return $this->db->createCommand($sql)->queryColumn();
     }
 
-    /**
-     * @param string $name
-     * @return TableSchema|null
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws Throwable
-     */
     protected function loadTableSchema(string $name): ?TableSchema
     {
         $table = new TableSchema();
@@ -182,11 +130,6 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         return null;
     }
 
-    /**
-     * Resolves the table name and schema name (if any).
-     * @param TableSchema $table the table metadata object
-     * @param string $name the table name
-     */
     protected function resolveTableNames(TableSchema $table, string $name): void
     {
         $parts = explode('.', str_replace('`', '', $name));
@@ -199,14 +142,7 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         }
     }
 
-    /**
-     * Collects the metadata of table columns.
-     * @param TableSchema $table the table metadata
-     * @return bool whether the table exists in the database
-     * @throws InvalidArgumentException
-     * @throws Throwable
-     */
-    protected function findColumns(TableSchema $table)
+    protected function findColumns(TableSchema $table): bool
     {
         $sql = 'SHOW FULL COLUMNS FROM ' . $this->quoteTableName($table->fullName);
         try {
@@ -237,13 +173,6 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         return true;
     }
 
-    /**
-     * Loads the column information into a [[ColumnSchema]] object.
-     * @param array $info column information
-     * @return ColumnSchema the column schema object
-     * @throws DependencyException
-     * @throws NotFoundException|ReflectionException
-     */
     protected function loadColumnSchema(array $info): \Rabbit\DB\ColumnSchema
     {
         $column = $this->createColumnSchema();
@@ -304,14 +233,6 @@ class Schema extends \Rabbit\DB\Schema implements ConstraintFinderInterface
         return $column;
     }
 
-    /**
-     * Collects the foreign key column details for the given table.
-     * @param TableSchema $table the table metadata
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws Throwable
-     */
     protected function findConstraints(TableSchema $table): void
     {
         $sql = <<<'SQL'
@@ -375,35 +296,12 @@ SQL;
         }
     }
 
-    /**
-     * @param string $tableName
-     * @return Constraint|null
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
     protected function loadTablePrimaryKey(string $tableName): ?Constraint
     {
         return $this->loadTableConstraints($tableName, 'primaryKey');
     }
 
-    /**
-     * Loads multiple types of constraints and returns the specified ones.
-     * @param string $tableName table name.
-     * @param string $returnType return type:
-     * - primaryKey
-     * - foreignKeys
-     * - uniques
-     * @return mixed constraints.
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws Throwable
-     * @throws NotSupportedException
-     */
-    private function loadTableConstraints(string $tableName, string $returnType)
+    private function loadTableConstraints(string $tableName, string $returnType): null|array|Constraint
     {
         static $sql = <<<'SQL'
 SELECT
@@ -469,13 +367,13 @@ SQL;
             foreach ($names as $name => $constraint) {
                 switch ($type) {
                     case 'PRIMARY KEY':
-                        $result['primaryKey'] = ObjectFactory::createObject([
+                        $result['primaryKey'] = create([
                             'class' => Constraint::class,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
                         ]);
                         break;
                     case 'FOREIGN KEY':
-                        $result['foreignKeys'][] = ObjectFactory::createObject([
+                        $result['foreignKeys'][] = create([
                             'class' => ForeignKeyConstraint::class,
                             'name' => $name,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
@@ -487,7 +385,7 @@ SQL;
                         ]);
                         break;
                     case 'UNIQUE':
-                        $result['uniques'][] = ObjectFactory::createObject([
+                        $result['uniques'][] = create([
                             'class' => Constraint::class,
                             'name' => $name,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
@@ -503,10 +401,7 @@ SQL;
         return $result[$returnType];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function resolveTableName($name): TableSchema
+    protected function resolveTableName(string $name): TableSchema
     {
         $resolvedName = new TableSchema();
         $parts = explode('.', str_replace('`', '', $name));
@@ -521,29 +416,11 @@ SQL;
         return $resolvedName;
     }
 
-    /**
-     * @param string $tableName
-     * @return array
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
     protected function loadTableForeignKeys(string $tableName): array
     {
         return $this->loadTableConstraints($tableName, 'foreignKeys');
     }
 
-    /**
-     * @param string $tableName
-     * @return array
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
     protected function loadTableIndexes(string $tableName): array
     {
         static $sql = <<<'SQL'
@@ -578,45 +455,21 @@ SQL;
         return $result;
     }
 
-    /**
-     * @param string $tableName
-     * @return array
-     * @throws DependencyException
-     * @throws InvalidArgumentException
-     * @throws NotFoundException
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
-    protected function loadTableUniques(string $tableName): array
+    protected function loadTableUniques(string $tableName): ?array
     {
         return $this->loadTableConstraints($tableName, 'uniques');
     }
 
-    /**
-     * {@inheritdoc}
-     * @throws NotSupportedException if this method is called.
-     */
-    protected function loadTableChecks(string $tableName): array
+    protected function loadTableChecks(string $tableName): ?array
     {
         throw new NotSupportedException('MySQL does not support check constraints.');
     }
-
-    /**
-     * {@inheritdoc}
-     * @throws NotSupportedException if this method is called.
-     */
-    protected function loadTableDefaultValues(string $tableName): array
+    protected function loadTableDefaultValues(string $tableName): ?array
     {
         throw new NotSupportedException('MySQL does not support default value constraints.');
     }
 
-    /**
-     * @return bool whether the version of the MySQL being used is older than 5.1.
-     * @throws InvalidArgumentException
-     * @throws Throwable
-     * @since 2.0.13
-     */
-    protected function isOldMysql()
+    protected function isOldMysql(): bool
     {
         if ($this->_oldMysql === null) {
             $version = $this->db->getSlavePdo()->getAttribute(\PDO::ATTR_SERVER_VERSION);

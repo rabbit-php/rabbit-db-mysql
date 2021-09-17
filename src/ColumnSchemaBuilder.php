@@ -13,17 +13,8 @@ use Rabbit\Base\Exception\NotSupportedException;
 use Rabbit\DB\ColumnSchemaBuilder as AbstractColumnSchemaBuilder;
 use Throwable;
 
-/**
- * ColumnSchemaBuilder is the schema builder for MySQL databases.
- *
- * @author Chris Harris <chris@buckshotsoftware.com>
- * @since 2.0.8
- */
 class ColumnSchemaBuilder extends AbstractColumnSchemaBuilder
 {
-    /**
-     * {@inheritdoc}
-     */
     public function __toString()
     {
         switch ($this->getTypeCategory()) {
@@ -40,20 +31,11 @@ class ColumnSchemaBuilder extends AbstractColumnSchemaBuilder
         return $this->buildCompleteString($format);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function buildUnsignedString(): string
     {
         return $this->isUnsigned ? ' UNSIGNED' : '';
     }
 
-    /**
-     * @return string
-     * @throws InvalidArgumentException
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
     protected function buildAfterString(): string
     {
         return $this->after !== null ?
@@ -61,20 +43,11 @@ class ColumnSchemaBuilder extends AbstractColumnSchemaBuilder
             '';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function buildFirstString(): string
     {
         return $this->isFirst ? ' FIRST' : '';
     }
 
-    /**
-     * @return string
-     * @throws InvalidArgumentException
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
     protected function buildCommentString(): string
     {
         return $this->comment !== null ? ' COMMENT ' . $this->db->quoteValue($this->comment) : '';

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
@@ -10,19 +11,12 @@ namespace Rabbit\DB\Mysql;
 
 use Rabbit\DB\ExpressionInterface;
 use Rabbit\DB\JsonExpression;
+use Rabbit\DB\PdoValue;
+use Rabbit\DB\Query;
 
-/**
- * Class ColumnSchema for MySQL database
- *
- * @author Dmytro Naumenko <d.naumenko.a@gmail.com>
- * @since 2.0.14.1
- */
 class ColumnSchema extends \Rabbit\DB\ColumnSchema
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function dbTypecast($value)
+    public function dbTypecast(ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null $value): ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null
     {
         if ($value === null) {
             return null;
@@ -42,7 +36,7 @@ class ColumnSchema extends \Rabbit\DB\ColumnSchema
     /**
      * {@inheritdoc}
      */
-    public function phpTypecast($value)
+    public function phpTypecast(ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null $value): ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null
     {
         if ($value === null) {
             return null;

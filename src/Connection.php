@@ -8,33 +8,21 @@ use PDO;
 use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\ConnectionInterface;
 
-/**
- * Class Connection
- * @package rabbit\db\mysql
- */
+
 class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
 {
-    /** @var array|string[] */
     public array $schemaMap = [
         'mysqli' => Schema::class, // MySQL
         'mysql' => Schema::class, // MySQL
     ];
 
-    /**
-     * Connection constructor.
-     * @param string $dsn
-     * @param string $poolKey
-     */
     public function __construct(string $dsn, string $poolKey)
     {
         parent::__construct($dsn);
         $this->poolKey = $poolKey;
     }
 
-    /**
-     * @return PDO
-     */
-    public function createPdoInstance()
+    public function createPdoInstance(): object
     {
         $pdoClass = $this->pdoClass;
         $parsed = $this->parseDsn;
