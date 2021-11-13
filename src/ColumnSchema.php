@@ -19,7 +19,15 @@ class ColumnSchema extends \Rabbit\DB\ColumnSchema
     public function dbTypecast(ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null $value): ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null
     {
         if ($value === null) {
-            return null;
+            if ($this->dbType === Schema::TYPE_JSON) {
+                return new JsonExpression([], $this->type);
+            }
+
+            if ($this->dbType === Schema::TYPE_TEXT) {
+                return '';
+            }
+
+            return $this->defaultValue;
         }
 
         if ($value instanceof ExpressionInterface) {
@@ -28,6 +36,10 @@ class ColumnSchema extends \Rabbit\DB\ColumnSchema
 
         if ($this->dbType === Schema::TYPE_JSON) {
             return new JsonExpression($value, $this->type);
+        }
+
+        if ($this->dbType === Schema::TYPE_TIMESTAMP && is_numeric($value)) {
+            return date('Y-m-d H:i:s', $value);
         }
 
         return $this->typecast($value);
