@@ -52,11 +52,6 @@ class RetryHandler extends \Rabbit\DB\RetryHandler
             $errorInfo = $exception->errorInfo;
             if (($errorInfo[1] ?? false) && ((int)$errorInfo[1] === 70100 || (int)$errorInfo[1] === 2006)) {
                 return true;
-            } elseif (strpos($exception->getMessage(), 'MySQL server has gone away') !== false || strpos(
-                $exception->getMessage(),
-                'Error while sending QUERY packet. PID='
-            ) !== false) {
-                return true;
             }
         }
         return false;
