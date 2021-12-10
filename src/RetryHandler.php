@@ -50,7 +50,7 @@ class RetryHandler extends \Rabbit\DB\RetryHandler
     {
         if ($exception instanceof Exception) {
             $errorInfo = $exception->errorInfo;
-            if (($errorInfo[1] ?? false) && ((int)$errorInfo[1] === 70100 || (int)$errorInfo[1] === 2006)) {
+            if (($errorInfo[1] ?? false) && ((int)$errorInfo[0] === 70100 || (int)$errorInfo[0] === 2006)) {
                 return true;
             }
         }
