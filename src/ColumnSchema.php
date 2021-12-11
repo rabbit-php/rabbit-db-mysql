@@ -38,7 +38,10 @@ class ColumnSchema extends \Rabbit\DB\ColumnSchema
             return new JsonExpression($value, $this->type);
         }
 
-        if ($this->dbType === Schema::TYPE_TIMESTAMP && is_numeric($value)) {
+        if (($this->dbType === Schema::TYPE_TIMESTAMP
+            || $this->dbType === Schema::TYPE_DATETIME
+            || $this->dbType === Schema::TYPE_TIME
+            || $this->dbType === Schema::TYPE_DATE) && is_numeric($value)) {
             return date('Y-m-d H:i:s', $value);
         }
 
