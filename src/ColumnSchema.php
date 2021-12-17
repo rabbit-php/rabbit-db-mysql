@@ -23,7 +23,12 @@ class ColumnSchema extends \Rabbit\DB\ColumnSchema
                 return new JsonExpression([], $this->type);
             }
 
-            if ($this->dbType === Schema::TYPE_TEXT) {
+            if (
+                $this->dbType === Schema::TYPE_TEXT ||
+                $this->dbType === Schema::TYPE_MEDIUMTEXT ||
+                $this->dbType === Schema::TYPE_TINYTEXT ||
+                $this->dbType === Schema::TYPE_LONGTEXT
+            ) {
                 return '';
             }
 
