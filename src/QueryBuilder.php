@@ -243,6 +243,14 @@ class QueryBuilder extends \Rabbit\DB\QueryBuilder
     {
         return array_merge(parent::defaultExpressionBuilders(), [
             JsonExpression::class => JsonExpressionBuilder::class,
+            JsonCondition::class => JsonConditionBuilder::class
+        ]);
+    }
+
+    protected function defaultConditionClasses(): array
+    {
+        return array_merge(parent::defaultConditionClasses(), [
+            'JSON_CONTAINS' => JsonCondition::class,
         ]);
     }
 
