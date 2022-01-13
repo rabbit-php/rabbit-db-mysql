@@ -41,9 +41,10 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
         $timeout = $this->getPool()->getTimeout();
         $this->share = $timeout > 0 ? (int)$timeout : $this->share;
         $dsn = "$driver:host=$host;port=$port;" . implode(';', $parts);
-        $pdo = new $pdoClass($dsn, $this->username, $this->password, array_merge([
+        $pdo = new $pdoClass($dsn, $this->username, $this->password, [
             PDO::ATTR_TIMEOUT => (int)$timeout,
-        ], $this->attributes ?? []));
+            ...($this->attributes ?? [])
+        ]);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         if ($this->emulatePrepare !== null && constant('PDO::ATTR_EMULATE_PREPARES')) {
             $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, $this->emulatePrepare);

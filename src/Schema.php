@@ -267,10 +267,10 @@ SQL;
 
             $table->foreignKeys = [];
             foreach ($constraints as $name => $constraint) {
-                $table->foreignKeys[$name] = array_merge(
-                    [$constraint['referenced_table_name']],
-                    $constraint['columns']
-                );
+                $table->foreignKeys[$name] = [
+                    $constraint['referenced_table_name'],
+                    ...$constraint['columns']
+                ];
             }
         } catch (Exception $e) {
             $previous = $e->getPrevious();

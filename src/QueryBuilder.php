@@ -241,17 +241,19 @@ class QueryBuilder extends \Rabbit\DB\QueryBuilder
 
     protected function defaultExpressionBuilders(): array
     {
-        return array_merge(parent::defaultExpressionBuilders(), [
+        return [
+            ...parent::defaultExpressionBuilders(),
             JsonExpression::class => JsonExpressionBuilder::class,
             JsonCondition::class => JsonConditionBuilder::class
-        ]);
+        ];
     }
 
     protected function defaultConditionClasses(): array
     {
-        return array_merge(parent::defaultConditionClasses(), [
+        return [
+            ...parent::defaultConditionClasses(),
             'JSON_CONTAINS' => JsonCondition::class,
-        ]);
+        ];
     }
 
     protected function prepareInsertValues(string $table, array|Query $columns, array $params = []): array
