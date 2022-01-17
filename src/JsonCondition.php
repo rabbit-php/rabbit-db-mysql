@@ -8,15 +8,8 @@ use Rabbit\DB\Conditions\ConditionInterface;
 
 class JsonCondition implements ConditionInterface
 {
-    private string $operator;
-    private string $column;
-    private array $value;
-
-    public function __construct(string $column, string $operator, array $value)
+    public function __construct(private string $column, private string $operator, private array $value)
     {
-        $this->column = $column;
-        $this->operator = $operator;
-        $this->value = $value;
     }
 
     public static function fromArrayDefinition(string $operator, array $operands): self

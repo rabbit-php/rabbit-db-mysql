@@ -16,7 +16,7 @@ class Connection extends \Rabbit\DB\Connection implements ConnectionInterface
         'mysql' => Schema::class, // MySQL
     ];
 
-    public function __construct(string $dsn, string $poolKey)
+    public function __construct(protected string $dsn, string $poolKey)
     {
         parent::__construct($dsn);
         $this->poolKey = $poolKey;
