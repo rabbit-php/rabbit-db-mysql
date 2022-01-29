@@ -368,13 +368,13 @@ SQL;
                 switch ($type) {
                     case 'PRIMARY KEY':
                         $result['primaryKey'] = create([
-                            'class' => Constraint::class,
+                            '{}' => Constraint::class,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
                         ]);
                         break;
                     case 'FOREIGN KEY':
                         $result['foreignKeys'][] = create([
-                            'class' => ForeignKeyConstraint::class,
+                            '{}' => ForeignKeyConstraint::class,
                             'name' => $name,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
                             'foreignSchemaName' => $constraint[0]['foreign_table_schema'],
@@ -386,7 +386,7 @@ SQL;
                         break;
                     case 'UNIQUE':
                         $result['uniques'][] = create([
-                            'class' => Constraint::class,
+                            '{}' => Constraint::class,
                             'name' => $name,
                             'columnNames' => ArrayHelper::getColumn($constraint, 'column_name'),
                         ]);
@@ -444,7 +444,7 @@ SQL;
         $result = [];
         foreach ($indexes as $name => $index) {
             $result[] = create([
-                'class' => IndexConstraint::class,
+                '{}' => IndexConstraint::class,
                 'isPrimary' => (bool)$index[0]['index_is_primary'],
                 'isUnique' => (bool)$index[0]['index_is_unique'],
                 'name' => $name !== 'PRIMARY' ? $name : null,
