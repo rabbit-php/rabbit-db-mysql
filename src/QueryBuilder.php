@@ -253,6 +253,7 @@ class QueryBuilder extends \Rabbit\DB\QueryBuilder
         return [
             ...parent::defaultConditionClasses(),
             'JSON_CONTAINS' => JsonCondition::class,
+            'JSON_OVERLAPS' => JsonCondition::class,
         ];
     }
 

@@ -16,7 +16,14 @@ class JsonConditionBuilder implements ExpressionBuilderInterface
     {
         $operator = $expression->getOperator();
         $column = $expression->getColumn();
-        $value = implode(',', $expression->getValue());
+        switch (strtoupper($operator)) {
+            case 'JSON_OVERLAPS':
+                $value = json_encode($expression->getValue());
+                break;
+            default:
+                $value = implode(',', $expression->getValue());
+        }
+
 
         if ($value instanceof ExpressionInterface) {
             return "{$operator}($column,{$this->queryBuilder->buildExpression($value,$params)})";
