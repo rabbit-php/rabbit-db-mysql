@@ -11,12 +11,10 @@ namespace Rabbit\DB\Mysql;
 
 use Rabbit\DB\ExpressionInterface;
 use Rabbit\DB\JsonExpression;
-use Rabbit\DB\PdoValue;
-use Rabbit\DB\Query;
 
 class ColumnSchema extends \Rabbit\DB\ColumnSchema
 {
-    public function dbTypecast(ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null $value): ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null
+    public function dbTypecast(mixed $value): mixed
     {
         if ($value === null) {
             if ($this->dbType === Schema::TYPE_JSON) {
@@ -56,7 +54,7 @@ class ColumnSchema extends \Rabbit\DB\ColumnSchema
     /**
      * {@inheritdoc}
      */
-    public function phpTypecast(ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null $value): ExpressionInterface|PdoValue|Query|string|bool|array|int|float|null
+    public function phpTypecast(mixed $value): mixed
     {
         if ($value === null) {
             return null;
